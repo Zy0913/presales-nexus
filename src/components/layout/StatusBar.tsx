@@ -12,6 +12,7 @@ interface StatusBarProps {
   syncStatus: SyncStatus;
   lastSavedAt: string | null;
   collaborators: User[];
+  onSimulateConflict?: () => void;
 }
 
 export function StatusBar({
@@ -21,38 +22,51 @@ export function StatusBar({
   syncStatus,
   lastSavedAt,
   collaborators,
+  onSimulateConflict,
 }: StatusBarProps) {
   const getSyncStatusDisplay = () => {
-    switch (syncStatus) {
-      case 'synced':
-        return (
-          <span className="flex items-center gap-1 text-emerald-600">
-            <Cloud className="w-3 h-3" />
-            已同步
-          </span>
-        );
-      case 'syncing':
-        return (
-          <span className="flex items-center gap-1 text-amber-600">
-            <Cloud className="w-3 h-3 animate-pulse" />
-            同步中...
-          </span>
-        );
-      case 'offline':
-        return (
-          <span className="flex items-center gap-1 text-zinc-400">
-            <CloudOff className="w-3 h-3" />
-            离线
-          </span>
-        );
-      case 'conflict':
-        return (
-          <span className="flex items-center gap-1 text-red-600">
-            <AlertCircle className="w-3 h-3" />
-            有冲突
-          </span>
-        );
-    }
+    const content = (() => {
+      switch (syncStatus) {
+        case 'synced':
+          return (
+            <span className="flex items-center gap-1 text-emerald-600">
+              <Cloud className="w-3 h-3" />
+              已同步
+            </span>
+          );
+        case 'syncing':
+          return (
+            <span className="flex items-center gap-1 text-amber-600">
+              <Cloud className="w-3 h-3 animate-pulse" />
+              同步中...
+            </span>
+          );
+        case 'offline':
+          return (
+            <span className="flex items-center gap-1 text-zinc-400">
+              <CloudOff className="w-3 h-3" />
+              离线
+            </span>
+          );
+        case 'conflict':
+          return (
+            <span className="flex items-center gap-1 text-red-600">
+              <AlertCircle className="w-3 h-3" />
+              有冲突 (点击解决)
+            </span>
+          );
+      }
+    })();
+
+    return (
+      <button
+        className="hover:bg-zinc-100 px-2 py-0.5 rounded cursor-pointer transition-colors"
+        onClick={onSimulateConflict}
+        title="点击模拟版本冲突 (演示用)"
+      >
+        {content}
+      </button>
+    );
   };
 
   return (

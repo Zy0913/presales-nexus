@@ -30,12 +30,8 @@ export function MarkdownEditor({
     const start = textareaRef.current.selectionStart;
     const end = textareaRef.current.selectionEnd;
 
-    if (start !== end) {
-      const selectedText = content.substring(start, end);
-      onSelectionChange({ text: selectedText, start, end });
-    } else {
-      onSelectionChange(null);
-    }
+    const selectedText = content.substring(start, end);
+    onSelectionChange({ text: selectedText, start, end });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

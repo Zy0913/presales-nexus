@@ -13,6 +13,8 @@ import { SplitEditor } from '@/components/editor/SplitEditor';
 import { ResizablePanel } from '@/components/ui/resizable-panel';
 import { useToast, ToastContainer } from '@/components/ui/toast';
 import { MoveDocumentModal } from '@/components/modals/MoveDocumentModal';
+import { HistoryModal } from '@/components/modals/HistoryModal';
+import { DiffEditor } from '@/components/editor/DiffEditor';
 import {
   mockProjects,
   mockProjectMembers,
@@ -21,6 +23,7 @@ import {
   mockChatSessions,
   mockNotifications,
   currentUser,
+  mockUsers, // Import mockUsers
   getDocumentById,
 } from '@/lib/mock-data';
 import { countWords, generateId } from '@/lib/utils';
@@ -31,8 +34,11 @@ import {
   Document,
   ChatSession,
   ChatMessage,
+  User, // Import User type
+  DocumentStatus, // Import DocumentStatus
+  SyncStatus, // Import SyncStatus
 } from '@/types';
-import { FileText } from 'lucide-react';
+import { FileText, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 
 export default function Home() {
   // Project state
@@ -76,8 +82,35 @@ export default function Home() {
   const [moveModalMode, setMoveModalMode] = React.useState<'move' | 'copy'>('move');
   const [nodeToMove, setNodeToMove] = React.useState<FileTreeNode | null>(null);
 
+  // History state
+  const [isHistoryOpen, setIsHistoryOpen] = React.useState(false);
+
+  // Conflict state
+  const [isConflictMode, setIsConflictMode] = React.useState(false);
+  const [syncStatus, setSyncStatus] = React.useState<SyncStatus>('synced');
+
+  // Document Status State
+  const [docStatus, setDocStatus] = React.useState<DocumentStatus>('draft');
+
+  // Editor selection state
+  const [selection, setSelection] = React.useState<{ text: string; start: number; end: number } | null>(null);
+
+  // Collaborators state
+  const [collaborators, setCollaborators] = React.useState<User[]>([]);
+
   // Toast
   const { toasts, showToast } = useToast();
+
+  // Simulate collaborators joining
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      // Mock other users joining
+      const otherUsers = mockUsers.filter(u => u.id !== currentUser.id).slice(0, 3);
+      setCollaborators(otherUsers);
+      showToast(`${otherUsers[0].name} 等 3 人正在协同编辑`, 'info');
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [showToast]);
 
   // Derived state
   const currentDocument = React.useMemo(() => {
@@ -95,6 +128,7 @@ export default function Home() {
   }, [currentDocument]);
 
   const hasUnsavedChanges = editingContent !== originalContent;
+  const isReadOnly = docStatus === 'pending_review' || docStatus === 'approved';
 
   // Handlers
   const handleNodeSelect = (node: FileTreeNode) => {
@@ -424,28 +458,130 @@ export default function Home() {
   };
 
   const handleFormat = (format: string) => {
-    const formatLabels: Record<string, string> = {
-      h1: '一级标题',
-      h2: '二级标题',
-      bold: '加粗',
-      italic: '斜体',
-      strikethrough: '删除线',
-      ul: '无序列表',
-      ol: '有序列表',
-      table: '表格',
-      code: '代码块',
-      image: '图片',
-      link: '链接',
-    };
-    showToast(`已插入${formatLabels[format] || format}格式`, 'info');
+    // If no selection tracking or textarea ref, we can't easily format.
+    // We rely on the selection state updated by MarkdownEditor
+
+    // Default to appending if no selection (or handle differently)
+    // But MarkdownEditor should keep us updated.
+
+    let newContent = editingContent;
+    let newCursorPos = 0;
+
+    const start = selection?.start || editingContent.length;
+    const end = selection?.end || editingContent.length;
+    const selectedText = selection?.text || '';
+
+    const before = editingContent.substring(0, start);
+    const after = editingContent.substring(end);
+
+    switch (format) {
+      case 'bold':
+        newContent = `${before}**${selectedText || '加粗文本'}**${after}`;
+        break;
+      case 'italic':
+        newContent = `${before}*${selectedText || '斜体文本'}*${after}`;
+        break;
+      case 'strikethrough':
+        newContent = `${before}~~${selectedText || '删除文本'}~~${after}`;
+        break;
+      case 'h1':
+        newContent = `${before}# ${selectedText || '标题'}\n${after}`;
+        break;
+      case 'h2':
+        newContent = `${before}## ${selectedText || '标题'}\n${after}`;
+        break;
+      case 'ul':
+        newContent = `${before}- ${selectedText || '列表项'}\n${after}`;
+        break;
+      case 'ol':
+        newContent = `${before}1. ${selectedText || '列表项'}\n${after}`;
+        break;
+      case 'code':
+        if (selectedText.includes('\n')) {
+          newContent = `${before}\`\`\`\n${selectedText || '代码块'}\n\`\`\`\n${after}`;
+        } else {
+          newContent = `${before}\`${selectedText || '代码'}\`${after}`;
+        }
+        break;
+      case 'link':
+        newContent = `${before}[${selectedText || '链接文本'}](url)${after}`;
+        break;
+      case 'image':
+        newContent = `${before}![${selectedText || '图片描述'}](url)${after}`;
+        break;
+      case 'table':
+        newContent = `${before}\n| 列1 | 列2 | 列3 |\n| --- | --- | --- |\n| 内容 | 内容 | 内容 |\n${after}`;
+        break;
+    }
+
+    setEditingContent(newContent);
+    // Note: In a real app we would set selection back to the inserted text
+    // But for this prototype, just updating content is enough visual feedback.
+  };
+
+  const handleExport = (type: string) => {
+    showToast(`正在导出为 ${type.toUpperCase()}...`, 'info');
+    setTimeout(() => {
+      showToast('导出成功', 'success');
+    }, 1500);
   };
 
   const handleViewHistory = () => {
-    showToast('版本历史功能开发中...', 'info');
+    setIsHistoryOpen(true);
+  };
+
+  const handleRestoreHistory = (content: string) => {
+    setEditingContent(content);
+    setOriginalContent(content); // Assume restored version is saved or needs save? Let's treat as unsaved change or saved.
+    // Treat as unsaved change so user can decide to save over current
+    showToast('已回滚到历史版本', 'success');
   };
 
   const handleSubmitReview = () => {
-    showToast('文档已提交审核', 'success');
+    setDocStatus('pending_review');
+    showToast('文档已提交审核，编辑已锁定', 'success');
+  };
+
+  // Conflict & Status Simulation Handlers
+  const handleSimulateConflict = () => {
+    // If already in conflict, open resolver
+    if (syncStatus === 'conflict') {
+      setIsConflictMode(true);
+      return;
+    }
+    // Otherwise trigger conflict
+    setSyncStatus('conflict');
+    showToast('检测到版本冲突，请点击状态栏红字解决', 'error');
+  };
+
+  const handleResolveConflict = (choice: 'local' | 'remote' | 'manual', finalContent?: string) => {
+    if (choice === 'manual' && finalContent) {
+      setEditingContent(finalContent);
+      setOriginalContent(finalContent);
+      showToast('手动合并完成，文档已更新', 'success');
+    } else if (choice === 'remote') {
+      // Reconstruct mock remote content
+      const remoteContent = editingContent.split('\n\n## 补充说明')[0] + "\n\n## 补充说明 (来自李经理)\n\n这里需要补充关于安全合规的具体要求，请注意修改。\n\n- 数据本地化存储\n- 传输加密标准\n- 访问日志审计";
+      setEditingContent(remoteContent);
+      setOriginalContent(remoteContent);
+      showToast('已覆盖为云端版本', 'success');
+    } else {
+      // Local choice
+      setOriginalContent(editingContent);
+      showToast('已保留本地版本 (忽略云端变更)', 'success');
+    }
+    setSyncStatus('synced');
+    setIsConflictMode(false);
+  };
+
+  const handleSimulateApproval = () => {
+    setDocStatus('approved');
+    showToast('审核通过！文档已发布', 'success');
+  };
+
+  const handleSimulateRejection = () => {
+    setDocStatus('rejected');
+    showToast('审核驳回，请修改', 'error');
   };
 
   const handleSendMessage = (message: string) => {
@@ -655,6 +791,89 @@ export default function Home() {
         <div className="flex-1 flex flex-col min-w-0">
           {tabs.length > 0 ? (
             <>
+              {/* Status Banner */}
+              {(docStatus !== 'draft' || syncStatus === 'conflict') && (
+                <div className={`px-4 py-2 flex items-center justify-between text-sm ${
+                  syncStatus === 'conflict' ? 'bg-amber-50 text-amber-800 border-b border-amber-100' :
+                  docStatus === 'pending_review' ? 'bg-amber-50 text-amber-800 border-b border-amber-100' :
+                  docStatus === 'approved' ? 'bg-emerald-50 text-emerald-800 border-b border-emerald-100' :
+                  'bg-red-50 text-red-800 border-b border-red-100'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    {syncStatus === 'conflict' ? <AlertTriangle className="w-4 h-4" /> :
+                     docStatus === 'pending_review' ? <AlertTriangle className="w-4 h-4" /> :
+                     docStatus === 'approved' ? <CheckCircle className="w-4 h-4" /> :
+                     <XCircle className="w-4 h-4" />}
+                    <span className="font-medium">
+                      {syncStatus === 'conflict' ? (isConflictMode ? '正在解决冲突...' : '检测到版本冲突，请解决后继续') :
+                       docStatus === 'pending_review' ? '文档审核中 - 编辑已锁定' :
+                       docStatus === 'approved' ? '文档已审核通过 - 已归档' :
+                       '文档被驳回 - 请修改后重新提交'}
+                    </span>
+                  </div>
+                  {/* Simulation Controls for Demo */}
+                  <div className="flex gap-2">
+                    {syncStatus === 'conflict' && (
+                      isConflictMode ? (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleResolveConflict('local')}
+                            className="px-2 py-0.5 bg-white border border-amber-200 hover:bg-amber-100 text-amber-800 rounded text-xs transition-colors"
+                          >
+                            保留本地
+                          </button>
+                          <button
+                            onClick={() => handleResolveConflict('remote')}
+                            className="px-2 py-0.5 bg-white border border-amber-200 hover:bg-amber-100 text-amber-800 rounded text-xs transition-colors"
+                          >
+                            保留云端
+                          </button>
+                          <div className="w-px h-3 bg-amber-200 mx-1" />
+                          <button
+                            onClick={() => handleResolveConflict('manual', editingContent)}
+                            className="px-2 py-0.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs transition-colors font-medium shadow-sm"
+                          >
+                            完成手动合并
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setIsConflictMode(true)}
+                          className="px-2 py-0.5 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded text-xs transition-colors font-medium"
+                        >
+                          解决冲突
+                        </button>
+                      )
+                    )}
+
+                    {docStatus === 'pending_review' && (
+                      <>
+                        <button
+                          onClick={handleSimulateApproval}
+                          className="px-2 py-0.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded text-xs transition-colors"
+                        >
+                          [模拟] 通过
+                        </button>
+                        <button
+                          onClick={handleSimulateRejection}
+                          className="px-2 py-0.5 bg-red-100 hover:bg-red-200 text-red-700 rounded text-xs transition-colors"
+                        >
+                          [模拟] 驳回
+                        </button>
+                      </>
+                    )}
+                    {docStatus === 'rejected' && (
+                      <button
+                        onClick={() => setDocStatus('draft')}
+                        className="px-2 py-0.5 bg-white border border-red-200 hover:bg-red-50 text-red-700 rounded text-xs transition-colors"
+                      >
+                        重新编辑
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <TabBar
                 tabs={tabs}
                 activeTabId={activeTabId}
@@ -670,27 +889,43 @@ export default function Home() {
                 onFormat={handleFormat}
                 onViewHistory={handleViewHistory}
                 onSubmitReview={handleSubmitReview}
+                onExport={handleExport}
+                collaborators={collaborators}
+                readOnly={isConflictMode}
               />
               <div className="flex-1 flex overflow-hidden">
-                {viewMode === 'edit' && (
-                  <div className="flex-1">
-                    <MarkdownEditor
-                      content={editingContent}
-                      onChange={handleContentChange}
-                    />
-                  </div>
-                )}
-                {viewMode === 'preview' && (
-                  <div className="flex-1 bg-white">
-                    <MarkdownPreview content={editingContent} />
-                  </div>
-                )}
-                {viewMode === 'split' && (
-                  <SplitEditor
-                    key={activeTabId}
+                {isConflictMode ? (
+                  <DiffEditor
                     content={editingContent}
                     onChange={handleContentChange}
+                    onSelectionChange={setSelection}
                   />
+                ) : (
+                  <>
+                    {viewMode === 'edit' && (
+                      <div className="flex-1">
+                        <MarkdownEditor
+                          content={editingContent}
+                          onChange={handleContentChange}
+                          onSelectionChange={setSelection}
+                          readOnly={isReadOnly}
+                        />
+                      </div>
+                    )}
+                    {viewMode === 'preview' && (
+                      <div className="flex-1 bg-white">
+                        <MarkdownPreview content={editingContent} />
+                      </div>
+                    )}
+                    {viewMode === 'split' && (
+                      <SplitEditor
+                        key={activeTabId}
+                        content={editingContent}
+                        onChange={handleContentChange}
+                        onSelectionChange={setSelection}
+                      />
+                    )}
+                  </>
                 )}
               </div>
             </>
@@ -760,9 +995,10 @@ export default function Home() {
         currentDocument={currentDocument}
         cursorPosition={{ line: 1, column: 1 }}
         wordCount={countWords(editingContent)}
-        syncStatus="synced"
+        syncStatus={syncStatus}
         lastSavedAt={lastSavedAt}
-        collaborators={[]}
+        collaborators={collaborators}
+        onSimulateConflict={handleSimulateConflict}
       />
 
       {/* Toast notifications */}
@@ -785,6 +1021,14 @@ export default function Home() {
           setNodeToMove(null);
         }}
         onConfirm={handleMoveConfirm}
+      />
+
+      {/* History Modal */}
+      <HistoryModal
+        isOpen={isHistoryOpen}
+        document={currentDocument}
+        onClose={() => setIsHistoryOpen(false)}
+        onRestore={handleRestoreHistory}
       />
     </div>
   );

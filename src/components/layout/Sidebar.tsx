@@ -324,7 +324,7 @@ export function Sidebar({
             </div>
 
             <Button
-              variant="outline"
+              variant="secondary"
               size="sm"
               className="w-full h-8 text-xs gap-1.5 text-zinc-600 border-zinc-200 bg-white hover:bg-zinc-50"
               onClick={() => setIsMemberDialogOpen(true)}

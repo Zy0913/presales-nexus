@@ -923,7 +923,7 @@ function EditProjectModal({ project, onClose, onSave }: { project: Project; onCl
 
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-1">项目状态</label>
-              <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+              <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value as ProjectStatus })}>
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
@@ -1076,7 +1076,7 @@ function DeleteConfirmModal({ project, onClose, onConfirm }: { project: Project;
               取消
             </Button>
             <Button
-              variant="destructive"
+              variant="danger"
               className="flex-1 bg-red-600 hover:bg-red-700 text-white"
               onClick={handleDelete}
               disabled={isDeleting}

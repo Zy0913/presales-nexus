@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 interface SplitEditorProps {
   content: string;
   onChange: (content: string) => void;
+  onSelectionChange?: (selection: { text: string; start: number; end: number } | null) => void;
   defaultSplitRatio?: number; // 0-1, default 0.5
   minRatio?: number;
   maxRatio?: number;
@@ -14,6 +15,7 @@ interface SplitEditorProps {
 export function SplitEditor({
   content,
   onChange,
+  onSelectionChange,
   defaultSplitRatio = 0.5,
   minRatio = 0.25,
   maxRatio = 0.75,
@@ -25,6 +27,38 @@ export function SplitEditor({
   const [splitRatio, setSplitRatio] = React.useState(defaultSplitRatio);
   const [isDragging, setIsDragging] = React.useState(false);
   const [isSyncingScroll, setIsSyncingScroll] = React.useState(false);
+
+  // Handle selection change
+  const handleSelect = () => {
+    if (!editorRef.current || !onSelectionChange) return;
+
+    const start = editorRef.current.selectionStart;
+    const end = editorRef.current.selectionEnd;
+
+    const selectedText = content.substring(start, end);
+    onSelectionChange({ text: selectedText, start, end });
+  };
+
+  // Handle key down (e.g. Tab)
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const textarea = editorRef.current;
+      if (!textarea) return;
+
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+
+      const newContent = content.substring(0, start) + '  ' + content.substring(end);
+      onChange(newContent);
+
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = start + 2;
+        // Trigger selection update
+        handleSelect();
+      }, 0);
+    }
+  };
 
   // Handle drag to resize
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -194,6 +228,8 @@ export function SplitEditor({
           ref={editorRef}
           value={content}
           onChange={(e) => onChange(e.target.value)}
+          onSelect={handleSelect}
+          onKeyDown={handleKeyDown}
           onScroll={handleEditorScroll}
           placeholder="开始编写内容..."
           className={cn(

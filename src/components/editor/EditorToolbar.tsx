@@ -21,11 +21,20 @@ import {
   Send,
   Undo,
   Redo,
+  Download,
+  FileText,
+  FileType,
+  FileCode
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { EditorViewMode } from '@/types';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { EditorViewMode, User } from '@/types';
 
 interface EditorToolbarProps {
   viewMode: EditorViewMode;
@@ -40,6 +49,9 @@ interface EditorToolbarProps {
   onSave?: () => void;
   onViewHistory?: () => void;
   onSubmitReview?: () => void;
+  onExport?: (type: string) => void;
+  collaborators?: User[];
+  readOnly?: boolean; // Add readOnly prop to disable system actions
 }
 
 export function EditorToolbar({
@@ -55,92 +67,186 @@ export function EditorToolbar({
   onSave,
   onViewHistory,
   onSubmitReview,
+  onExport,
+  collaborators = [],
+  readOnly = false, // Default false
 }: EditorToolbarProps) {
   return (
     <TooltipProvider>
-      <div className="h-10 bg-white border-b border-zinc-200 flex items-center justify-between px-2">
-        {/* Left: View mode toggle */}
-        <div className="flex items-center gap-1">
-          <div className="flex items-center bg-zinc-100 rounded-md p-0.5">
+      <div className="flex flex-col border-b border-zinc-200 bg-white">
+        {/* Row 1: System & View Controls */}
+        <div className={`h-10 flex items-center justify-between px-3 border-b border-zinc-100 ${readOnly ? 'opacity-50 pointer-events-none' : ''}`}>
+          {/* Left: View mode toggle */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-zinc-400 mr-1">视图</span>
+            <div className="flex items-center bg-zinc-100 rounded-md p-0.5">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={viewMode === 'edit' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="h-6 px-2"
+                    onClick={() => onViewModeChange('edit')}
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>编辑模式</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={viewMode === 'preview' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="h-6 px-2"
+                    onClick={() => onViewModeChange('preview')}
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>预览模式</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={viewMode === 'split' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="h-6 px-2"
+                    onClick={() => onViewModeChange('split')}
+                  >
+                    <Columns className="w-3.5 h-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>分屏模式</TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+
+          {/* Right: Actions */}
+          <div className="flex items-center gap-2">
+            {/* Collaborators Stack */}
+            {collaborators.length > 0 && (
+              <div className="flex items-center mr-2 border-r border-zinc-200 pr-3 h-5">
+                <div className="flex items-center -space-x-2">
+                  {collaborators.map((user) => (
+                    <Tooltip key={user.id}>
+                      <TooltipTrigger asChild>
+                        <div className="w-6 h-6 rounded-full border-2 border-white bg-indigo-100 flex items-center justify-center text-[10px] text-indigo-700 font-medium cursor-default ring-1 ring-white">
+                          {user.name.slice(0, 1)}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>{user.name} 正在编辑</TooltipContent>
+                    </Tooltip>
+                  ))}
+                </div>
+                <span className="text-[10px] text-zinc-400 ml-2">{collaborators.length} 人在线</span>
+              </div>
+            )}
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8">
+                  <Download className="w-4 h-4 mr-1.5" />
+                  导出
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-40 p-1" align="end">
+                <div className="flex flex-col gap-0.5">
+                  <button
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100 rounded-md text-left transition-colors"
+                    onClick={() => onExport?.('pdf')}
+                  >
+                    <FileText className="w-4 h-4 text-red-500" />
+                    导出 PDF
+                  </button>
+                  <button
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100 rounded-md text-left transition-colors"
+                    onClick={() => onExport?.('word')}
+                  >
+                    <FileType className="w-4 h-4 text-blue-500" />
+                    导出 Word
+                  </button>
+                  <button
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100 rounded-md text-left transition-colors"
+                    onClick={() => onExport?.('markdown')}
+                  >
+                    <FileCode className="w-4 h-4 text-zinc-500" />
+                    导出 Markdown
+                  </button>
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8" onClick={onViewHistory}>
+                  <History className="w-4 h-4 mr-1.5" />
+                  历史
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>版本历史</TooltipContent>
+            </Tooltip>
+
+            <div className="w-px h-4 bg-zinc-200 mx-1" />
+
+            <Button
+              variant="secondary"
+              size="sm"
+              className="h-8"
+              onClick={onSave}
+              disabled={isSaving || !hasUnsavedChanges}
+            >
+              <Save className="w-4 h-4 mr-1.5" />
+              {isSaving ? '保存中...' : '保存'}
+            </Button>
+
+            <Button size="sm" className="h-8" onClick={onSubmitReview}>
+              <Send className="w-4 h-4 mr-1.5" />
+              提交审核
+            </Button>
+          </div>
+        </div>
+
+        {/* Row 2: Formatting Tools */}
+        <div className="h-10 flex items-center px-3 gap-1 bg-zinc-50/50 overflow-x-auto">
+          {/* Undo/Redo */}
+          <div className="flex items-center mr-2">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant={viewMode === 'edit' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
-                  className="h-7 px-2"
-                  onClick={() => onViewModeChange('edit')}
+                  className="h-7 px-2 text-zinc-500"
+                  disabled={!canUndo}
+                  onClick={onUndo}
                 >
-                  <Edit3 className="w-4 h-4" />
+                  <Undo className="w-4 h-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>编辑模式</TooltipContent>
+              <TooltipContent>撤销</TooltipContent>
             </Tooltip>
 
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant={viewMode === 'preview' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
-                  className="h-7 px-2"
-                  onClick={() => onViewModeChange('preview')}
+                  className="h-7 px-2 text-zinc-500"
+                  disabled={!canRedo}
+                  onClick={onRedo}
                 >
-                  <Eye className="w-4 h-4" />
+                  <Redo className="w-4 h-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>预览模式</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={viewMode === 'split' ? 'default' : 'ghost'}
-                  size="sm"
-                  className="h-7 px-2"
-                  onClick={() => onViewModeChange('split')}
-                >
-                  <Columns className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>分屏模式</TooltipContent>
+              <TooltipContent>重做</TooltipContent>
             </Tooltip>
           </div>
 
-          <Separator orientation="vertical" className="h-6 mx-2" />
+          <div className="w-px h-4 bg-zinc-200 mx-1" />
 
-          {/* Undo/Redo */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2"
-                disabled={!canUndo}
-                onClick={onUndo}
-              >
-                <Undo className="w-4 h-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>撤销</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2"
-                disabled={!canRedo}
-                onClick={onRedo}
-              >
-                <Redo className="w-4 h-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>重做</TooltipContent>
-          </Tooltip>
-
-          <Separator orientation="vertical" className="h-6 mx-2" />
-
-          {/* Format buttons */}
+          {/* Headings */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -169,8 +275,9 @@ export function EditorToolbar({
             <TooltipContent>二级标题</TooltipContent>
           </Tooltip>
 
-          <Separator orientation="vertical" className="h-6 mx-2" />
+          <div className="w-px h-4 bg-zinc-200 mx-1" />
 
+          {/* Text Style */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -213,8 +320,9 @@ export function EditorToolbar({
             <TooltipContent>删除线</TooltipContent>
           </Tooltip>
 
-          <Separator orientation="vertical" className="h-6 mx-2" />
+          <div className="w-px h-4 bg-zinc-200 mx-1" />
 
+          {/* Lists */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -243,6 +351,9 @@ export function EditorToolbar({
             <TooltipContent>有序列表</TooltipContent>
           </Tooltip>
 
+          <div className="w-px h-4 bg-zinc-200 mx-1" />
+
+          {/* Insert */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -298,34 +409,6 @@ export function EditorToolbar({
             </TooltipTrigger>
             <TooltipContent>链接</TooltipContent>
           </Tooltip>
-        </div>
-
-        {/* Right: Actions */}
-        <div className="flex items-center gap-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" onClick={onViewHistory}>
-                <History className="w-4 h-4 mr-1" />
-                历史
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>版本历史</TooltipContent>
-          </Tooltip>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={onSave}
-            disabled={isSaving || !hasUnsavedChanges}
-          >
-            <Save className="w-4 h-4 mr-1" />
-            {isSaving ? '保存中...' : '保存'}
-          </Button>
-
-          <Button size="sm" onClick={onSubmitReview}>
-            <Send className="w-4 h-4 mr-1" />
-            提交审核
-          </Button>
         </div>
       </div>
     </TooltipProvider>
