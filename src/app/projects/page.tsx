@@ -8,8 +8,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Star,
-  StarOff,
   RefreshCw,
   Settings2,
   Edit2,
@@ -17,9 +15,19 @@ import {
   X,
   AlertTriangle,
 } from 'lucide-react';
+import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/date-picker';
 import { cn } from '@/lib/utils';
 import { useToast, ToastContainer } from '@/components/ui/toast';
+import { mockNotifications, currentUser } from '@/lib/mock-data';
 
 // Project status types
 type ProjectStatus = 'active' | 'pending' | 'negotiating' | 'won' | 'lost' | 'archived';
@@ -42,179 +50,210 @@ interface Project {
   expectedCloseDate: string;
   createdAt: string;
   updatedAt: string;
-  isStarred: boolean;
   responsible: string;
 }
 
 // Mock projects data
-const mockProjects: Project[] = [
+const mockProjectsData: Project[] = [
   {
     id: 'proj_001',
     projectNo: 'PRJ-2024-001',
-    name: '智慧园区综合管理平台',
-    customer: '深圳前海科技园',
-    category: '智慧城市',
+    name: '深圳湾口岸智慧通关系统',
+    customer: '深圳海关',
+    category: '海关/口岸',
     status: 'active',
-    salesPerson: '张伟',
+    salesPerson: '李晓燕',
     salesRegion: '华南区',
     region: '广东省',
-    budgetAmount: 3800000,
+    budgetAmount: 29620000,
     contractAmount: 0,
     currency: 'CNY',
-    source: 'CRM同步',
+    source: '招投标',
     contractNo: '',
-    expectedCloseDate: '2024-03-15',
-    createdAt: '2024-01-10',
-    updatedAt: '2024-01-19',
-    isStarred: true,
-    responsible: '李明',
+    expectedCloseDate: '2025-02-28',
+    createdAt: '2024-12-01',
+    updatedAt: '2025-01-19',
+    responsible: '李晓燕',
   },
   {
     id: 'proj_002',
     projectNo: 'PRJ-2024-002',
-    name: '企业数字化转型咨询',
-    customer: '华南制造集团',
-    category: '咨询服务',
-    status: 'negotiating',
-    salesPerson: '王芳',
+    name: '拱北海关监管仓库系统',
+    customer: '拱北海关',
+    category: '海关/口岸',
+    status: 'active',
+    salesPerson: '张明远',
     salesRegion: '华南区',
     region: '广东省',
-    budgetAmount: 1500000,
+    budgetAmount: 18500000,
     contractAmount: 0,
     currency: 'CNY',
-    source: '主动开发',
+    source: '老客户推荐',
     contractNo: '',
-    expectedCloseDate: '2024-02-28',
-    createdAt: '2024-01-05',
-    updatedAt: '2024-01-18',
-    isStarred: false,
-    responsible: '王芳',
+    expectedCloseDate: '2025-03-15',
+    createdAt: '2024-11-15',
+    updatedAt: '2025-01-18',
+    responsible: '张明远',
   },
   {
     id: 'proj_003',
     projectNo: 'PRJ-2024-003',
-    name: '金融风控系统升级',
-    customer: '南方银行',
-    category: '金融科技',
+    name: '广州白云机场海关查验系统',
+    customer: '广州海关',
+    category: '海关/口岸',
     status: 'pending',
-    salesPerson: '陈强',
+    salesPerson: '王思聪',
     salesRegion: '华南区',
     region: '广东省',
-    budgetAmount: 5200000,
+    budgetAmount: 22000000,
     contractAmount: 0,
     currency: 'CNY',
-    source: '老客户推荐',
+    source: '招投标',
     contractNo: '',
-    expectedCloseDate: '2024-04-30',
-    createdAt: '2024-01-15',
-    updatedAt: '2024-01-17',
-    isStarred: true,
-    responsible: '陈强',
+    expectedCloseDate: '2025-04-30',
+    createdAt: '2025-01-10',
+    updatedAt: '2025-01-18',
+    responsible: '王思聪',
   },
   {
     id: 'proj_004',
-    projectNo: 'PRJ-2023-045',
-    name: '医疗信息化平台',
-    customer: '省人民医院',
-    category: '医疗健康',
-    status: 'won',
-    salesPerson: '赵丽',
-    salesRegion: '华东区',
-    region: '浙江省',
-    budgetAmount: 2800000,
-    contractAmount: 2650000,
-    currency: 'CNY',
-    source: '招投标',
-    contractNo: 'HT-2024-0012',
-    expectedCloseDate: '2024-01-10',
-    createdAt: '2023-10-20',
-    updatedAt: '2024-01-10',
-    isStarred: false,
-    responsible: '赵丽',
-  },
-  {
-    id: 'proj_005',
     projectNo: 'PRJ-2024-004',
-    name: '供应链管理系统',
-    customer: '东方物流',
-    category: '物流供应链',
-    status: 'active',
-    salesPerson: '刘伟',
-    salesRegion: '华北区',
-    region: '北京市',
-    budgetAmount: 2000000,
-    contractAmount: 0,
-    currency: 'CNY',
-    source: '展会获客',
-    contractNo: '',
-    expectedCloseDate: '2024-03-20',
-    createdAt: '2024-01-08',
-    updatedAt: '2024-01-19',
-    isStarred: false,
-    responsible: '刘伟',
-  },
-  {
-    id: 'proj_006',
-    projectNo: 'PRJ-2023-038',
-    name: '智慧校园建设项目',
-    customer: '深圳大学',
-    category: '智慧教育',
-    status: 'won',
-    salesPerson: '张伟',
+    name: '横琴口岸智慧监管平台',
+    customer: '珠海海关',
+    category: '海关/口岸',
+    status: 'negotiating',
+    salesPerson: '陈雨婷',
     salesRegion: '华南区',
     region: '广东省',
-    budgetAmount: 4500000,
-    contractAmount: 4200000,
-    currency: 'CNY',
-    source: '招投标',
-    contractNo: 'HT-2023-0089',
-    expectedCloseDate: '2023-12-15',
-    createdAt: '2023-06-15',
-    updatedAt: '2023-12-20',
-    isStarred: false,
-    responsible: '张伟',
-  },
-  {
-    id: 'proj_007',
-    projectNo: 'PRJ-2024-005',
-    name: '零售数据中台建设',
-    customer: '优选超市连锁',
-    category: '零售电商',
-    status: 'lost',
-    salesPerson: '王芳',
-    salesRegion: '华东区',
-    region: '上海市',
-    budgetAmount: 1800000,
+    budgetAmount: 15800000,
     contractAmount: 0,
     currency: 'CNY',
     source: '主动开发',
     contractNo: '',
-    expectedCloseDate: '2024-01-20',
-    createdAt: '2023-11-10',
-    updatedAt: '2024-01-15',
-    isStarred: false,
-    responsible: '王芳',
+    expectedCloseDate: '2025-05-20',
+    createdAt: '2024-12-20',
+    updatedAt: '2025-01-17',
+    responsible: '陈雨婷',
+  },
+  {
+    id: 'proj_005',
+    projectNo: 'PRJ-2023-045',
+    name: '上海浦东机场海关系统升级',
+    customer: '上海海关',
+    category: '海关/口岸',
+    status: 'won',
+    salesPerson: '赵凯文',
+    salesRegion: '华东区',
+    region: '上海市',
+    budgetAmount: 32000000,
+    contractAmount: 30500000,
+    currency: 'CNY',
+    source: '招投标',
+    contractNo: 'HT-2024-0012',
+    expectedCloseDate: '2024-12-15',
+    createdAt: '2023-10-20',
+    updatedAt: '2024-12-20',
+    responsible: '赵凯文',
+  },
+  {
+    id: 'proj_006',
+    projectNo: 'PRJ-2024-005',
+    name: '福州港智慧口岸建设',
+    customer: '福州海关',
+    category: '海关/口岸',
+    status: 'active',
+    salesPerson: '李晓燕',
+    salesRegion: '华东区',
+    region: '福建省',
+    budgetAmount: 19500000,
+    contractAmount: 0,
+    currency: 'CNY',
+    source: '展会获客',
+    contractNo: '',
+    expectedCloseDate: '2025-06-30',
+    createdAt: '2024-12-28',
+    updatedAt: '2025-01-19',
+    responsible: '李晓燕',
+  },
+  {
+    id: 'proj_007',
+    projectNo: 'PRJ-2023-038',
+    name: '南京禄口机场海关查验',
+    customer: '南京海关',
+    category: '海关/口岸',
+    status: 'won',
+    salesPerson: '张明远',
+    salesRegion: '华东区',
+    region: '江苏省',
+    budgetAmount: 16800000,
+    contractAmount: 16200000,
+    currency: 'CNY',
+    source: '招投标',
+    contractNo: 'HT-2023-0089',
+    expectedCloseDate: '2023-11-30',
+    createdAt: '2023-06-15',
+    updatedAt: '2023-12-05',
+    responsible: '张明远',
   },
   {
     id: 'proj_008',
     projectNo: 'PRJ-2024-006',
-    name: '新能源车联网平台',
-    customer: '绿动汽车',
-    category: '智能制造',
-    status: 'negotiating',
-    salesPerson: '陈强',
+    name: '厦门海沧港智能监管系统',
+    customer: '厦门海关',
+    category: '海关/口岸',
+    status: 'lost',
+    salesPerson: '王思聪',
     salesRegion: '华东区',
-    region: '江苏省',
-    budgetAmount: 6500000,
+    region: '福建省',
+    budgetAmount: 14500000,
+    contractAmount: 0,
+    currency: 'CNY',
+    source: '主动开发',
+    contractNo: '',
+    expectedCloseDate: '2024-12-31',
+    createdAt: '2024-09-10',
+    updatedAt: '2025-01-05',
+    responsible: '王思聪',
+  },
+  {
+    id: 'proj_009',
+    projectNo: 'PRJ-2024-007',
+    name: '天津港保税区监管平台',
+    customer: '天津海关',
+    category: '海关/口岸',
+    status: 'negotiating',
+    salesPerson: '陈雨婷',
+    salesRegion: '华北区',
+    region: '天津市',
+    budgetAmount: 25000000,
     contractAmount: 0,
     currency: 'CNY',
     source: '老客户推荐',
     contractNo: '',
-    expectedCloseDate: '2024-05-15',
-    createdAt: '2024-01-12',
-    updatedAt: '2024-01-18',
-    isStarred: true,
-    responsible: '陈强',
+    expectedCloseDate: '2025-07-15',
+    createdAt: '2024-12-15',
+    updatedAt: '2025-01-16',
+    responsible: '陈雨婷',
+  },
+  {
+    id: 'proj_010',
+    projectNo: 'PRJ-2024-008',
+    name: '青岛港智慧通关系统',
+    customer: '青岛海关',
+    category: '海关/口岸',
+    status: 'pending',
+    salesPerson: '赵凯文',
+    salesRegion: '华北区',
+    region: '山东省',
+    budgetAmount: 21000000,
+    contractAmount: 0,
+    currency: 'CNY',
+    source: '招投标',
+    contractNo: '',
+    expectedCloseDate: '2025-08-31',
+    createdAt: '2025-01-05',
+    updatedAt: '2025-01-15',
+    responsible: '赵凯文',
   },
 ];
 
@@ -227,9 +266,10 @@ const statusConfig: Record<ProjectStatus, { label: string; color: string }> = {
   archived: { label: '已归档', color: 'bg-zinc-100 text-zinc-500' },
 };
 
-const categories = ['全部类别', '智慧城市', '咨询服务', '金融科技', '医疗健康', '物流供应链', '智慧教育', '零售电商', '智能制造'];
+const categories = ['全部类别', '海关/口岸', '边检系统', '机场海关', '港口海关', '保税监管', '跨境电商'];
 const statuses = ['全部状态', '跟进中', '待跟进', '谈判中', '已成交', '已丢单', '已归档'];
-const regions = ['全部区域', '华南区', '华东区', '华北区', '西南区', '西北区'];
+const regions = ['全部区域', '华南区', '华东区', '华北区', '西南区', '西北区', '东北区'];
+const sources = ['全部来源', '招投标', '老客户推荐', '主动开发', '展会获客', 'CRM同步'];
 
 function formatCurrency(amount: number, currency: string = 'CNY'): string {
   if (amount === 0) return '-';
@@ -247,7 +287,7 @@ export default function ProjectsPage() {
   const [selectedStatus, setSelectedStatus] = React.useState('全部状态');
   const [selectedRegion, setSelectedRegion] = React.useState('全部区域');
   const [showNewProjectModal, setShowNewProjectModal] = React.useState(false);
-  const [projects, setProjects] = React.useState(mockProjects);
+  const [projects, setProjects] = React.useState(mockProjectsData);
   const [currentPage, setCurrentPage] = React.useState(1);
   const [selectedRows, setSelectedRows] = React.useState<Set<string>>(new Set());
   const [editingProject, setEditingProject] = React.useState<Project | null>(null);
@@ -272,15 +312,6 @@ export default function ProjectsPage() {
 
   const totalPages = Math.ceil(filteredProjects.length / pageSize);
   const paginatedProjects = filteredProjects.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-
-  const toggleStar = (projectId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const project = projects.find(p => p.id === projectId);
-    setProjects(projects.map((p) => (p.id === projectId ? { ...p, isStarred: !p.isStarred } : p)));
-    if (project) {
-      showToast(project.isStarred ? '已取消星标' : '已添加星标', 'success');
-    }
-  };
 
   const toggleRowSelection = (projectId: string) => {
     const newSelected = new Set(selectedRows);
@@ -324,54 +355,20 @@ export default function ProjectsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="h-screen flex flex-col bg-white overflow-hidden">
       {/* Header */}
-      <header className="h-14 bg-white border-b border-zinc-200 flex items-center justify-between px-6">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-zinc-900 rounded-lg flex items-center justify-center">
-              <span className="text-white font-semibold text-sm">PN</span>
-            </div>
-            <span className="font-semibold text-zinc-900">售前协作平台</span>
-          </Link>
-          <div className="w-px h-6 bg-zinc-200" />
-          <h1 className="text-lg font-medium text-zinc-900">项目管理</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button size="sm" onClick={() => setShowNewProjectModal(true)}>
-            <Plus className="w-4 h-4 mr-1" />
-            新建项目
-          </Button>
-        </div>
-      </header>
+      <Header
+        currentProject={null}
+        currentPath={['项目管理']}
+        user={currentUser}
+        notifications={mockNotifications}
+        unreadCount={mockNotifications.filter(n => !n.isRead).length}
+      />
 
       {/* Main content */}
-      <div className="p-6">
-        {/* Stats cards */}
-        <div className="grid grid-cols-5 gap-4 mb-6">
-          <div className="bg-white rounded-xl border border-zinc-200 p-4">
-            <div className="text-sm text-zinc-500 mb-1">全部项目</div>
-            <div className="text-2xl font-semibold text-zinc-900">{stats.total}</div>
-          </div>
-          <div className="bg-white rounded-xl border border-zinc-200 p-4">
-            <div className="text-sm text-zinc-500 mb-1">进行中</div>
-            <div className="text-2xl font-semibold text-blue-600">{stats.active}</div>
-          </div>
-          <div className="bg-white rounded-xl border border-zinc-200 p-4">
-            <div className="text-sm text-zinc-500 mb-1">待跟进</div>
-            <div className="text-2xl font-semibold text-amber-600">{stats.pending}</div>
-          </div>
-          <div className="bg-white rounded-xl border border-zinc-200 p-4">
-            <div className="text-sm text-zinc-500 mb-1">已成交</div>
-            <div className="text-2xl font-semibold text-emerald-600">{stats.won}</div>
-          </div>
-          <div className="bg-white rounded-xl border border-zinc-200 p-4">
-            <div className="text-sm text-zinc-500 mb-1">总预算金额</div>
-            <div className="text-2xl font-semibold text-zinc-900">{formatCurrency(stats.totalBudget)}</div>
-          </div>
-        </div>
-
-        {/* Filters */}
+      <div className="flex-1 overflow-auto bg-zinc-50">
+        <div className="p-6">
+        {/* Projects table */}
         <div className="bg-white rounded-xl border border-zinc-200 mb-4">
           <div className="p-4 flex items-center justify-between gap-4 border-b border-zinc-100">
             {/* Search */}
@@ -388,47 +385,54 @@ export default function ProjectsPage() {
 
             {/* Filters */}
             <div className="flex items-center gap-2">
-              <div className="relative">
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="appearance-none pl-3 pr-8 py-2 text-sm border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900/10"
-                >
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-[140px] h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
                   {categories.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
                   ))}
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
-              </div>
+                </SelectContent>
+              </Select>
 
-              <div className="relative">
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="appearance-none pl-3 pr-8 py-2 text-sm border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900/10"
-                >
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger className="w-[120px] h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
                   {statuses.map((status) => (
-                    <option key={status} value={status}>{status}</option>
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
                   ))}
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
-              </div>
+                </SelectContent>
+              </Select>
 
-              <div className="relative">
-                <select
-                  value={selectedRegion}
-                  onChange={(e) => setSelectedRegion(e.target.value)}
-                  className="appearance-none pl-3 pr-8 py-2 text-sm border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900/10"
-                >
+              <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+                <SelectTrigger className="w-[120px] h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
                   {regions.map((region) => (
-                    <option key={region} value={region}>{region}</option>
+                    <SelectItem key={region} value={region}>
+                      {region}
+                    </SelectItem>
                   ))}
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
-              </div>
+                </SelectContent>
+              </Select>
 
               <Button variant="ghost" size="sm" onClick={() => showToast('正在刷新...', 'info')}>
                 <RefreshCw className="w-4 h-4" />
+              </Button>
+
+              <div className="w-px h-6 bg-zinc-200" />
+
+              <Button size="sm" onClick={() => setShowNewProjectModal(true)}>
+                <Plus className="w-4 h-4 mr-1" />
+                新建项目
               </Button>
             </div>
           </div>
@@ -448,7 +452,6 @@ export default function ProjectsPage() {
                       />
                     </div>
                   </th>
-                  <th className="w-8 px-2 py-3"></th>
                   <th className="text-left text-xs font-medium text-zinc-500 px-3 py-3 whitespace-nowrap w-[240px]">项目信息</th>
                   <th className="text-left text-xs font-medium text-zinc-500 px-3 py-3 whitespace-nowrap w-[120px]">客户</th>
                   <th className="text-left text-xs font-medium text-zinc-500 px-3 py-3 whitespace-nowrap w-[70px]">状态</th>
@@ -479,15 +482,6 @@ export default function ProjectsPage() {
                           className="rounded border-zinc-300"
                         />
                       </div>
-                    </td>
-                    <td className="px-2 py-3">
-                      <button onClick={(e) => toggleStar(project.id, e)} className="hover:scale-110 transition-transform">
-                        {project.isStarred ? (
-                          <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                        ) : (
-                          <StarOff className="w-4 h-4 text-zinc-300 hover:text-zinc-400" />
-                        )}
-                      </button>
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex flex-col">
@@ -613,6 +607,7 @@ export default function ProjectsPage() {
             <p className="text-sm text-zinc-500">尝试调整筛选条件或搜索关键词</p>
           </div>
         )}
+        </div>
       </div>
 
       {/* New Project Modal */}
@@ -690,7 +685,6 @@ function NewProjectModal({ onClose, onSuccess }: { onClose: () => void; onSucces
         expectedCloseDate: formData.expectedCloseDate || new Date().toISOString().split('T')[0],
         createdAt: new Date().toISOString().split('T')[0],
         updatedAt: new Date().toISOString().split('T')[0],
-        isStarred: false,
         responsible: formData.responsible || formData.salesPerson || '待分配',
       };
 
@@ -738,16 +732,18 @@ function NewProjectModal({ onClose, onSuccess }: { onClose: () => void; onSucces
 
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-1">项目类别</label>
-              <select
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10 bg-white"
-              >
-                <option value="">选择类别</option>
-                {categories.slice(1).map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
+              <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="选择类别" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.slice(1).map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
@@ -763,11 +759,10 @@ function NewProjectModal({ onClose, onSuccess }: { onClose: () => void; onSucces
 
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-1">预计成交日期</label>
-              <input
-                type="date"
+              <DatePicker
                 value={formData.expectedCloseDate}
-                onChange={(e) => setFormData({ ...formData, expectedCloseDate: e.target.value })}
-                className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10"
+                onChange={(date) => setFormData({ ...formData, expectedCloseDate: date })}
+                placeholder="选择预计成交日期"
               />
             </div>
 
@@ -795,32 +790,34 @@ function NewProjectModal({ onClose, onSuccess }: { onClose: () => void; onSucces
 
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-1">销售区域</label>
-              <select
-                value={formData.salesRegion}
-                onChange={(e) => setFormData({ ...formData, salesRegion: e.target.value })}
-                className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10 bg-white"
-              >
-                <option value="">选择区域</option>
-                {regions.slice(1).map((region) => (
-                  <option key={region} value={region}>{region}</option>
-                ))}
-              </select>
+              <Select value={formData.salesRegion} onValueChange={(value) => setFormData({ ...formData, salesRegion: value })}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="选择区域" />
+                </SelectTrigger>
+                <SelectContent>
+                  {regions.slice(1).map((region) => (
+                    <SelectItem key={region} value={region}>
+                      {region}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-1">项目来源</label>
-              <select
-                value={formData.source}
-                onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10 bg-white"
-              >
-                <option value="">选择来源</option>
-                <option value="CRM同步">CRM同步</option>
-                <option value="主动开发">主动开发</option>
-                <option value="老客户推荐">老客户推荐</option>
-                <option value="招投标">招投标</option>
-                <option value="展会获客">展会获客</option>
-              </select>
+              <Select value={formData.source} onValueChange={(value) => setFormData({ ...formData, source: value })}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="选择来源" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sources.slice(1).map((source) => (
+                    <SelectItem key={source} value={source}>
+                      {source}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="col-span-2">
@@ -926,31 +923,35 @@ function EditProjectModal({ project, onClose, onSave }: { project: Project; onCl
 
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-1">项目状态</label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10 bg-white"
-              >
-                <option value="pending">待跟进</option>
-                <option value="active">跟进中</option>
-                <option value="negotiating">谈判中</option>
-                <option value="won">已成交</option>
-                <option value="lost">已丢单</option>
-                <option value="archived">已归档</option>
-              </select>
+              <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">待跟进</SelectItem>
+                  <SelectItem value="active">跟进中</SelectItem>
+                  <SelectItem value="negotiating">谈判中</SelectItem>
+                  <SelectItem value="won">已成交</SelectItem>
+                  <SelectItem value="lost">已丢单</SelectItem>
+                  <SelectItem value="archived">已归档</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-1">项目类别</label>
-              <select
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10 bg-white"
-              >
-                {categories.slice(1).map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
+              <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.slice(1).map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
@@ -965,11 +966,10 @@ function EditProjectModal({ project, onClose, onSave }: { project: Project; onCl
 
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-1">预计成交日期</label>
-              <input
-                type="date"
+              <DatePicker
                 value={formData.expectedCloseDate}
-                onChange={(e) => setFormData({ ...formData, expectedCloseDate: e.target.value })}
-                className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10"
+                onChange={(date) => setFormData({ ...formData, expectedCloseDate: date })}
+                placeholder="选择预计成交日期"
               />
             </div>
 
@@ -995,30 +995,34 @@ function EditProjectModal({ project, onClose, onSave }: { project: Project; onCl
 
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-1">销售区域</label>
-              <select
-                value={formData.salesRegion}
-                onChange={(e) => setFormData({ ...formData, salesRegion: e.target.value })}
-                className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10 bg-white"
-              >
-                {regions.slice(1).map((region) => (
-                  <option key={region} value={region}>{region}</option>
-                ))}
-              </select>
+              <Select value={formData.salesRegion} onValueChange={(value) => setFormData({ ...formData, salesRegion: value })}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {regions.slice(1).map((region) => (
+                    <SelectItem key={region} value={region}>
+                      {region}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-1">项目来源</label>
-              <select
-                value={formData.source}
-                onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10 bg-white"
-              >
-                <option value="CRM同步">CRM同步</option>
-                <option value="主动开发">主动开发</option>
-                <option value="老客户推荐">老客户推荐</option>
-                <option value="招投标">招投标</option>
-                <option value="展会获客">展会获客</option>
-              </select>
+              <Select value={formData.source} onValueChange={(value) => setFormData({ ...formData, source: value })}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {sources.slice(1).map((source) => (
+                    <SelectItem key={source} value={source}>
+                      {source}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

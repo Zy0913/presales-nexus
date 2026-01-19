@@ -12,6 +12,7 @@ import { MarkdownPreview } from '@/components/editor/MarkdownPreview';
 import { SplitEditor } from '@/components/editor/SplitEditor';
 import { ResizablePanel } from '@/components/ui/resizable-panel';
 import { useToast, ToastContainer } from '@/components/ui/toast';
+import { MoveDocumentModal } from '@/components/modals/MoveDocumentModal';
 import {
   mockProjects,
   mockProjectMembers,
@@ -35,7 +36,7 @@ import { FileText } from 'lucide-react';
 
 export default function Home() {
   // Project state
-  const [currentProject] = React.useState(mockProjects[0]);
+  const [currentProject, setCurrentProject] = React.useState(mockProjects[0]);
   const [fileTree, setFileTree] = React.useState(mockFileTree);
 
   // Sidebar state
@@ -69,6 +70,11 @@ export default function Home() {
     mockChatSessions[0]?.id || null
   );
   const [isAILoading, setIsAILoading] = React.useState(false);
+
+  // Move/Copy modal state
+  const [isMoveModalOpen, setIsMoveModalOpen] = React.useState(false);
+  const [moveModalMode, setMoveModalMode] = React.useState<'move' | 'copy'>('move');
+  const [nodeToMove, setNodeToMove] = React.useState<FileTreeNode | null>(null);
 
   // Toast
   const { toasts, showToast } = useToast();
@@ -132,6 +138,229 @@ export default function Home() {
       newExpanded.add(folderId);
     }
     setExpandedFolderIds(newExpanded);
+  };
+
+  const handleProjectChange = (projectId: string) => {
+    const project = mockProjects.find(p => p.id === projectId);
+    if (project) {
+      setCurrentProject(project);
+      showToast(`已切换到项目: ${project.name}`, 'info');
+    }
+  };
+
+  const handleCreateDocument = (parentId?: string) => {
+    const newDocId = `doc_${generateId()}`;
+    const newDoc: FileTreeNode = {
+      id: newDocId,
+      type: 'document',
+      name: '新建文档',
+      parentId: parentId || null,
+      order: 0,
+      status: 'draft',
+      syncStatus: 'synced',
+    };
+
+    if (parentId) {
+      // Add to specific folder
+      const addToFolder = (nodes: FileTreeNode[]): FileTreeNode[] => {
+        return nodes.map(node => {
+          if (node.id === parentId && node.type === 'folder') {
+            return {
+              ...node,
+              children: [...(node.children || []), newDoc],
+            };
+          }
+          if (node.children) {
+            return {
+              ...node,
+              children: addToFolder(node.children),
+            };
+          }
+          return node;
+        });
+      };
+      setFileTree(addToFolder(fileTree));
+      // Expand the parent folder
+      setExpandedFolderIds(new Set([...expandedFolderIds, parentId]));
+    } else {
+      // Add to root
+      setFileTree([...fileTree, newDoc]);
+    }
+    showToast('已创建新文档', 'success');
+  };
+
+  const handleCreateFolder = (parentId?: string) => {
+    const newFolderId = `folder_${generateId()}`;
+    const newFolder: FileTreeNode = {
+      id: newFolderId,
+      type: 'folder',
+      name: '新建文件夹',
+      parentId: parentId || null,
+      order: 0,
+      children: [],
+    };
+
+    if (parentId) {
+      // Add to specific folder
+      const addToFolder = (nodes: FileTreeNode[]): FileTreeNode[] => {
+        return nodes.map(node => {
+          if (node.id === parentId && node.type === 'folder') {
+            return {
+              ...node,
+              children: [...(node.children || []), newFolder],
+            };
+          }
+          if (node.children) {
+            return {
+              ...node,
+              children: addToFolder(node.children),
+            };
+          }
+          return node;
+        });
+      };
+      setFileTree(addToFolder(fileTree));
+      // Expand the parent folder
+      setExpandedFolderIds(new Set([...expandedFolderIds, parentId]));
+    } else {
+      // Add to root
+      setFileTree([...fileTree, newFolder]);
+    }
+    showToast('已创建新文件夹', 'success');
+  };
+
+  const handleDeleteNode = (node: FileTreeNode) => {
+    const deleteFromTree = (nodes: FileTreeNode[]): FileTreeNode[] => {
+      return nodes
+        .filter(n => n.id !== node.id)
+        .map(n => ({
+          ...n,
+          children: n.children ? deleteFromTree(n.children) : undefined,
+        }));
+    };
+    setFileTree(deleteFromTree(fileTree));
+
+    // If deleted node was selected, clear selection
+    if (selectedNodeId === node.id) {
+      setSelectedNodeId(null);
+    }
+
+    // Close tab if document is open
+    if (node.type === 'document') {
+      const tabToClose = tabs.find(t => t.documentId === node.id);
+      if (tabToClose) {
+        handleTabClose(tabToClose.id);
+      }
+    }
+
+    showToast(`已删除: ${node.name}`, 'success');
+  };
+
+  const handleMoveNode = (node: FileTreeNode) => {
+    setNodeToMove(node);
+    setMoveModalMode('move');
+    setIsMoveModalOpen(true);
+  };
+
+  const handleCopyNode = (node: FileTreeNode) => {
+    setNodeToMove(node);
+    setMoveModalMode('copy');
+    setIsMoveModalOpen(true);
+  };
+
+  const handleUploadFile = (parentId?: string) => {
+    // In a real app, this would open a file picker
+    showToast(`上传文件到: ${parentId || '根目录'}`, 'info');
+  };
+
+  const handleMoveConfirm = (targetProjectId: string, targetFolderId: string | null) => {
+    if (!nodeToMove) return;
+
+    const actionText = moveModalMode === 'move' ? '移动' : '复制';
+
+    if (moveModalMode === 'move') {
+      // Remove from current location
+      const removeFromTree = (nodes: FileTreeNode[]): FileTreeNode[] => {
+        return nodes
+          .filter(n => n.id !== nodeToMove.id)
+          .map(n => ({
+            ...n,
+            children: n.children ? removeFromTree(n.children) : undefined,
+          }));
+      };
+
+      // Add to target location
+      const addToTarget = (nodes: FileTreeNode[]): FileTreeNode[] => {
+        if (targetFolderId === null) {
+          // Add to root
+          return [...nodes, { ...nodeToMove, parentId: null }];
+        }
+        return nodes.map(node => {
+          if (node.id === targetFolderId && node.type === 'folder') {
+            return {
+              ...node,
+              children: [...(node.children || []), { ...nodeToMove, parentId: targetFolderId }],
+            };
+          }
+          if (node.children) {
+            return {
+              ...node,
+              children: addToTarget(node.children),
+            };
+          }
+          return node;
+        });
+      };
+
+      // Only handle same project for now
+      if (targetProjectId === currentProject.id) {
+        const treeWithoutNode = removeFromTree(fileTree);
+        const newTree = addToTarget(treeWithoutNode);
+        setFileTree(newTree);
+        if (targetFolderId) {
+          setExpandedFolderIds(new Set([...expandedFolderIds, targetFolderId]));
+        }
+      }
+    } else {
+      // Copy: create a duplicate with new ID
+      const copiedNode: FileTreeNode = {
+        ...nodeToMove,
+        id: `${nodeToMove.type}_${generateId()}`,
+        name: `${nodeToMove.name} (副本)`,
+        parentId: targetFolderId,
+      };
+
+      const addToTarget = (nodes: FileTreeNode[]): FileTreeNode[] => {
+        if (targetFolderId === null) {
+          return [...nodes, copiedNode];
+        }
+        return nodes.map(node => {
+          if (node.id === targetFolderId && node.type === 'folder') {
+            return {
+              ...node,
+              children: [...(node.children || []), copiedNode],
+            };
+          }
+          if (node.children) {
+            return {
+              ...node,
+              children: addToTarget(node.children),
+            };
+          }
+          return node;
+        });
+      };
+
+      if (targetProjectId === currentProject.id) {
+        setFileTree(addToTarget(fileTree));
+        if (targetFolderId) {
+          setExpandedFolderIds(new Set([...expandedFolderIds, targetFolderId]));
+        }
+      }
+    }
+
+    showToast(`${actionText}成功: ${nodeToMove.name}`, 'success');
+    setNodeToMove(null);
   };
 
   const handleTabSelect = (tabId: string) => {
@@ -379,9 +608,17 @@ export default function Home() {
             expandedFolderIds={expandedFolderIds}
             recentDocuments={recentDocuments}
             projectMembers={mockProjectMembers}
+            currentProject={currentProject}
             onToggleCollapse={() => setIsSidebarCollapsed(false)}
             onNodeSelect={handleNodeSelect}
             onFolderToggle={handleFolderToggle}
+            onProjectChange={handleProjectChange}
+            onCreateDocument={handleCreateDocument}
+            onCreateFolder={handleCreateFolder}
+            onUploadFile={handleUploadFile}
+            onDeleteNode={handleDeleteNode}
+            onMoveNode={handleMoveNode}
+            onCopyNode={handleCopyNode}
           />
         ) : (
           <ResizablePanel
@@ -399,9 +636,17 @@ export default function Home() {
               expandedFolderIds={expandedFolderIds}
               recentDocuments={recentDocuments}
               projectMembers={mockProjectMembers}
+              currentProject={currentProject}
               onToggleCollapse={() => setIsSidebarCollapsed(true)}
               onNodeSelect={handleNodeSelect}
               onFolderToggle={handleFolderToggle}
+              onProjectChange={handleProjectChange}
+              onCreateDocument={handleCreateDocument}
+              onCreateFolder={handleCreateFolder}
+              onUploadFile={handleUploadFile}
+              onDeleteNode={handleDeleteNode}
+              onMoveNode={handleMoveNode}
+              onCopyNode={handleCopyNode}
             />
           </ResizablePanel>
         )}
@@ -522,6 +767,25 @@ export default function Home() {
 
       {/* Toast notifications */}
       <ToastContainer toasts={toasts} />
+
+      {/* Move/Copy Document Modal */}
+      <MoveDocumentModal
+        isOpen={isMoveModalOpen}
+        mode={moveModalMode}
+        sourceNode={nodeToMove}
+        projects={mockProjects}
+        currentProjectId={currentProject.id}
+        fileTree={fileTree}
+        recentLocations={[
+          { projectId: currentProject.id, projectName: currentProject.name, folderId: 'folder_001', folderName: '技术方案' },
+          { projectId: currentProject.id, projectName: currentProject.name, folderId: 'folder_002', folderName: '商务文档' },
+        ]}
+        onClose={() => {
+          setIsMoveModalOpen(false);
+          setNodeToMove(null);
+        }}
+        onConfirm={handleMoveConfirm}
+      />
     </div>
   );
 }
