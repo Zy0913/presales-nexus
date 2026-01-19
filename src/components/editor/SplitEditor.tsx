@@ -184,11 +184,11 @@ export function SplitEditor({
   };
 
   return (
-    <div ref={containerRef} className="h-full flex overflow-hidden relative">
+    <div ref={containerRef} className="flex-1 w-full h-full flex overflow-hidden relative">
       {/* Editor panel */}
       <div
-        className="h-full flex flex-col overflow-hidden"
-        style={{ width: `${splitRatio * 100}%` }}
+        className="h-full flex flex-col overflow-hidden flex-shrink-0 border-r border-zinc-200"
+        style={{ width: `calc(${splitRatio * 100}% - 3px)` }}
       >
         <textarea
           ref={editorRef}
@@ -209,8 +209,8 @@ export function SplitEditor({
       {/* Draggable divider */}
       <div
         className={cn(
-          'w-1 bg-zinc-200 cursor-col-resize hover:bg-zinc-300 transition-colors flex-shrink-0 relative group',
-          isDragging && 'bg-zinc-400'
+          'w-1.5 bg-zinc-100 border-x border-zinc-200 cursor-col-resize hover:bg-zinc-200 transition-colors flex-shrink-0 relative group',
+          isDragging && 'bg-zinc-300'
         )}
         onMouseDown={handleMouseDown}
       >
@@ -225,8 +225,7 @@ export function SplitEditor({
 
       {/* Preview panel */}
       <div
-        className="h-full overflow-hidden bg-white"
-        style={{ width: `${(1 - splitRatio) * 100}%` }}
+        className="h-full overflow-hidden bg-white flex-1 min-w-0"
       >
         <div
           ref={previewRef}

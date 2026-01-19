@@ -99,6 +99,12 @@ export default function Home() {
       const existingTab = tabs.find(t => t.documentId === node.id);
       if (existingTab) {
         setActiveTabId(existingTab.id);
+        // Also update content when switching to existing tab
+        const doc = getDocumentById(node.id);
+        if (doc) {
+          setEditingContent(doc.content);
+          setOriginalContent(doc.content);
+        }
       } else {
         // Open new tab
         const doc = getDocumentById(node.id);
@@ -436,6 +442,7 @@ export default function Home() {
                 )}
                 {viewMode === 'split' && (
                   <SplitEditor
+                    key={activeTabId}
                     content={editingContent}
                     onChange={handleContentChange}
                   />
