@@ -1,0 +1,215 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #18181b;
+  --muted: #71717a;
+  --muted-foreground: #a1a1aa;
+  --border: #e4e4e7;
+  --border-hover: #d4d4d8;
+  --accent: #18181b;
+  --accent-light: #f4f4f5;
+  --surface: #fafafa;
+  --surface-hover: #f4f4f5;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* 自定义滚动条 - 更细腻 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d4d4d8;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1aa;
+}
+
+/* 隐藏滚动条但保持滚动功能 */
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 拖拽手柄 */
+.resize-handle {
+  position: absolute;
+  background: transparent;
+  transition: background-color 150ms ease;
+  z-index: 10;
+}
+
+.resize-handle:hover,
+.resize-handle.active {
+  background: var(--accent);
+}
+
+.resize-handle-vertical {
+  width: 4px;
+  cursor: col-resize;
+  top: 0;
+  bottom: 0;
+  right: -2px;
+}
+
+.resize-handle-horizontal {
+  height: 4px;
+  cursor: row-resize;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+}
+
+/* Markdown 编辑器样式 */
+.markdown-editor {
+  font-family: "SF Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  letter-spacing: -0.01em;
+}
+
+.markdown-preview h1 {
+  @apply text-2xl font-semibold mb-4 pb-3 border-b border-zinc-200 text-zinc-900;
+}
+
+.markdown-preview h2 {
+  @apply text-xl font-semibold mb-3 mt-8 text-zinc-900;
+}
+
+.markdown-preview h3 {
+  @apply text-lg font-semibold mb-2 mt-6 text-zinc-800;
+}
+
+.markdown-preview p {
+  @apply mb-4 leading-relaxed text-zinc-700;
+}
+
+.markdown-preview ul,
+.markdown-preview ol {
+  @apply mb-4 pl-6;
+}
+
+.markdown-preview li {
+  @apply mb-1.5 text-zinc-700;
+}
+
+.markdown-preview ul li {
+  @apply list-disc;
+}
+
+.markdown-preview ol li {
+  @apply list-decimal;
+}
+
+.markdown-preview table {
+  @apply w-full mb-4 border-collapse text-sm;
+}
+
+.markdown-preview th,
+.markdown-preview td {
+  @apply border border-zinc-200 px-3 py-2 text-left;
+}
+
+.markdown-preview th {
+  @apply bg-zinc-50 font-medium text-zinc-700;
+}
+
+.markdown-preview code {
+  @apply bg-zinc-100 px-1.5 py-0.5 rounded text-[13px] font-mono text-zinc-800;
+}
+
+.markdown-preview pre {
+  @apply bg-zinc-900 text-zinc-100 p-4 rounded-lg mb-4 overflow-x-auto;
+}
+
+.markdown-preview pre code {
+  @apply bg-transparent p-0 text-zinc-100;
+}
+
+.markdown-preview blockquote {
+  @apply border-l-2 border-zinc-300 pl-4 py-1 mb-4 text-zinc-600 italic;
+}
+
+.markdown-preview a {
+  @apply text-zinc-700 hover:text-zinc-900 underline;
+}
+
+.markdown-preview hr {
+  @apply border-t border-zinc-200 my-8;
+}
+
+/* 文件树节点动画 */
+.file-tree-node {
+  transition: background-color 100ms ease-out;
+}
+
+/* AI 消息流式动画 */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.ai-cursor {
+  animation: blink 1s infinite;
+}
+
+/* 面板过渡动画 */
+.panel-transition {
+  transition: width 150ms ease-out, transform 150ms ease-out;
+}
+
+/* 折叠动画 */
+.collapsible-content {
+  overflow: hidden;
+  transition: height 150ms ease-out, opacity 150ms ease-out;
+}
+
+/* 按钮焦点样式 */
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* 输入框焦点样式 */
+input:focus,
+textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-light), 0 0 0 3px var(--accent);
+}
+
+/* 选中状态高亮 */
+::selection {
+  background-color: #d4d4d8;
+}
+
+/* 细腻的阴影系统 */
+.shadow-subtle {
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.03), 0 1px 3px 0 rgb(0 0 0 / 0.05);
+}
+
+.shadow-elevated {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+}
+
+.shadow-floating {
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+}
