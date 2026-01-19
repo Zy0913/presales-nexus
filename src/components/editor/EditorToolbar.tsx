@@ -24,7 +24,8 @@ import {
   Download,
   FileText,
   FileType,
-  FileCode
+  FileCode,
+  Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -51,7 +52,9 @@ interface EditorToolbarProps {
   onSubmitReview?: () => void;
   onExport?: (type: string) => void;
   collaborators?: User[];
-  readOnly?: boolean; // Add readOnly prop to disable system actions
+  readOnly?: boolean;
+  isConflictMode?: boolean;
+  onResolveConflict?: (choice: 'local' | 'remote' | 'manual') => void;
 }
 
 export function EditorToolbar({
@@ -69,15 +72,17 @@ export function EditorToolbar({
   onSubmitReview,
   onExport,
   collaborators = [],
-  readOnly = false, // Default false
+  readOnly = false,
+  isConflictMode = false,
+  onResolveConflict,
 }: EditorToolbarProps) {
   return (
     <TooltipProvider>
       <div className="flex flex-col border-b border-zinc-200 bg-white">
         {/* Row 1: System & View Controls */}
-        <div className={`h-10 flex items-center justify-between px-3 border-b border-zinc-100 ${readOnly ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className="h-10 flex items-center justify-between px-3 border-b border-zinc-100">
           {/* Left: View mode toggle */}
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 ${isConflictMode ? 'opacity-50 pointer-events-none' : ''}`}>
             <span className="text-xs font-medium text-zinc-400 mr-1">视图</span>
             <div className="flex items-center bg-zinc-100 rounded-md p-0.5">
               <Tooltip>
@@ -124,10 +129,10 @@ export function EditorToolbar({
             </div>
           </div>
 
-          {/* Right: Actions */}
+          {/* Right: Actions OR Conflict Controls */}
           <div className="flex items-center gap-2">
-            {/* Collaborators Stack */}
-            {collaborators.length > 0 && (
+            {/* Collaborators Stack (Always show unless in conflict?) Keep it shown */}
+            {collaborators.length > 0 && !isConflictMode && (
               <div className="flex items-center mr-2 border-r border-zinc-200 pr-3 h-5">
                 <div className="flex items-center -space-x-2">
                   {collaborators.map((user) => (
@@ -145,67 +150,105 @@ export function EditorToolbar({
               </div>
             )}
 
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8">
-                  <Download className="w-4 h-4 mr-1.5" />
-                  导出
+            {isConflictMode ? (
+              // Conflict Resolution Controls
+              <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
+                <span className="text-xs text-zinc-500 font-medium mr-2 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                  冲突解决模式
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-zinc-600 hover:text-zinc-900"
+                  onClick={() => onResolveConflict?.('local')}
+                >
+                  保留本地
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-40 p-1" align="end">
-                <div className="flex flex-col gap-0.5">
-                  <button
-                    className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100 rounded-md text-left transition-colors"
-                    onClick={() => onExport?.('pdf')}
-                  >
-                    <FileText className="w-4 h-4 text-red-500" />
-                    导出 PDF
-                  </button>
-                  <button
-                    className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100 rounded-md text-left transition-colors"
-                    onClick={() => onExport?.('word')}
-                  >
-                    <FileType className="w-4 h-4 text-blue-500" />
-                    导出 Word
-                  </button>
-                  <button
-                    className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100 rounded-md text-left transition-colors"
-                    onClick={() => onExport?.('markdown')}
-                  >
-                    <FileCode className="w-4 h-4 text-zinc-500" />
-                    导出 Markdown
-                  </button>
-                </div>
-              </PopoverContent>
-            </Popover>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8" onClick={onViewHistory}>
-                  <History className="w-4 h-4 mr-1.5" />
-                  历史
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-zinc-600 hover:text-zinc-900"
+                  onClick={() => onResolveConflict?.('remote')}
+                >
+                  保留云端
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent>版本历史</TooltipContent>
-            </Tooltip>
+                <div className="w-px h-4 bg-zinc-200 mx-1" />
+                <Button
+                  size="sm"
+                  className="h-8 bg-zinc-900 hover:bg-zinc-800 text-white border-none"
+                  onClick={() => onResolveConflict?.('manual')}
+                >
+                  <Check className="w-4 h-4 mr-1.5" />
+                  完成合并
+                </Button>
+              </div>
+            ) : (
+              // Normal System Actions
+              <div className={`flex items-center gap-2 ${readOnly ? 'opacity-50 pointer-events-none' : ''}`}>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8">
+                      <Download className="w-4 h-4 mr-1.5" />
+                      导出
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-40 p-1" align="end">
+                    <div className="flex flex-col gap-0.5">
+                      <button
+                        className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100 rounded-md text-left transition-colors"
+                        onClick={() => onExport?.('pdf')}
+                      >
+                        <FileText className="w-4 h-4 text-red-500" />
+                        导出 PDF
+                      </button>
+                      <button
+                        className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100 rounded-md text-left transition-colors"
+                        onClick={() => onExport?.('word')}
+                      >
+                        <FileType className="w-4 h-4 text-blue-500" />
+                        导出 Word
+                      </button>
+                      <button
+                        className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100 rounded-md text-left transition-colors"
+                        onClick={() => onExport?.('markdown')}
+                      >
+                        <FileCode className="w-4 h-4 text-zinc-500" />
+                        导出 Markdown
+                      </button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
 
-            <div className="w-px h-4 bg-zinc-200 mx-1" />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8" onClick={onViewHistory}>
+                      <History className="w-4 h-4 mr-1.5" />
+                      历史
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>版本历史</TooltipContent>
+                </Tooltip>
 
-            <Button
-              variant="secondary"
-              size="sm"
-              className="h-8"
-              onClick={onSave}
-              disabled={isSaving || !hasUnsavedChanges}
-            >
-              <Save className="w-4 h-4 mr-1.5" />
-              {isSaving ? '保存中...' : '保存'}
-            </Button>
+                <div className="w-px h-4 bg-zinc-200 mx-1" />
 
-            <Button size="sm" className="h-8" onClick={onSubmitReview}>
-              <Send className="w-4 h-4 mr-1.5" />
-              提交审核
-            </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="h-8"
+                  onClick={onSave}
+                  disabled={isSaving || !hasUnsavedChanges}
+                >
+                  <Save className="w-4 h-4 mr-1.5" />
+                  {isSaving ? '保存中...' : '保存'}
+                </Button>
+
+                <Button size="sm" className="h-8" onClick={onSubmitReview}>
+                  <Send className="w-4 h-4 mr-1.5" />
+                  提交审核
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 

@@ -624,67 +624,10 @@ export default function Home() {
     // Simulate AI response
     setTimeout(() => {
       const aiResponses: Record<string, string> = {
-        '润色': `好的，我来帮您润色这段内容。
-
-优化后的版本：
-
-> 本系统采用云原生微服务架构，以领域驱动设计（DDD）为指导原则进行服务边界划分。技术栈选用成熟的 Spring Cloud Alibaba 生态，具备良好的可扩展性和可维护性。
-
-主要优化点：
-1. 引入了"云原生"概念，更具现代感
-2. 强调了 DDD 设计思想，体现专业性
-3. 突出了技术选型的成熟度和优势`,
-        '大纲': `根据文档内容，我为您生成了以下大纲：
-
-## 智慧园区综合管理平台 - 方案大纲
-
-### 第一章 项目概述
-1.1 项目背景
-1.2 建设目标
-1.3 建设范围
-
-### 第二章 需求分析
-2.1 业务需求
-2.2 功能需求
-2.3 非功能需求
-
-### 第三章 系统设计
-3.1 总体架构
-3.2 技术选型
-3.3 数据设计
-
-### 第四章 实施方案
-4.1 项目计划
-4.2 资源配置
-4.3 风险管理`,
-        '格式': `文档格式检查完成，发现以下问题：
-
-✅ 标题层级：符合规范
-✅ 段落结构：清晰合理
-⚠️ 表格格式：建议统一对齐方式
-⚠️ 代码块：建议添加语言标识
-✅ 列表格式：符合规范
-
-总体评分：85/100
-
-建议修改：
-1. 第二章的表格添加表头
-2. 代码块指定语言类型便于高亮显示`,
-        '资料': `根据当前文档内容，我找到了以下相关资料：
-
-📚 **参考文档**
-1. 《智慧园区建设指南》- 住建部 2024版
-2. 《物联网平台技术规范》- 工信部标准
-
-🔗 **技术参考**
-1. Spring Cloud Alibaba 官方文档
-2. TDengine 时序数据库最佳实践
-
-💡 **案例参考**
-1. 深圳前海智慧园区项目
-2. 杭州未来科技城智慧化改造
-
-需要我详细展开其中某项资料吗？`,
+        '润色': `好的，我来帮您润色这段内容。\n\n优化后的版本：\n\n> 本系统采用云原生微服务架构，以领域驱动设计（DDD）为指导原则进行服务边界划分。技术栈选用成熟的 Spring Cloud Alibaba 生态，具备良好的可扩展性和可维护性。\n\n主要优化点：\n1. 引入了"云原生"概念，更具现代感\n2. 强调了 DDD 设计思想，体现专业性\n3. 突出了技术选型的成熟度和优势`,
+        '大纲': `根据文档内容，我为您生成了以下大纲：\n\n## 智慧园区综合管理平台 - 方案大纲\n\n### 第一章 项目概述\n1.1 项目背景\n1.2 建设目标\n1.3 建设范围\n\n### 第二章 需求分析\n2.1 业务需求\n2.2 功能需求\n2.3 非功能需求\n\n### 第三章 系统设计\n3.1 总体架构\n3.2 技术选型\n3.3 数据设计\n\n### 第四章 实施方案\n4.1 项目计划\n4.2 资源配置\n4.3 风险管理`,
+        '格式': `文档格式检查完成，发现以下问题：\n\n✅ 标题层级：符合规范\n✅ 段落结构：清晰合理\n⚠️ 表格格式：建议统一对齐方式\n⚠️ 代码块：建议添加语言标识\n✅ 列表格式：符合规范\n\n总体评分：85/100\n\n建议修改：\n1. 第二章的表格添加表头\n2. 代码块指定语言类型便于高亮显示`,
+        '资料': `根据当前文档内容，我找到了以下相关资料：\n\n📚 **参考文档**\n1. 《智慧园区建设指南》- 住建部 2024版\n2. 《物联网平台技术规范》- 工信部标准\n\n🔗 **技术参考**\n1. Spring Cloud Alibaba 官方文档\n2. TDengine 时序数据库最佳实践\n\n💡 **案例参考**\n1. 深圳前海智慧园区项目\n2. 杭州未来科技城智慧化改造\n\n需要我详细展开其中某项资料吗？`,
       };
 
       let responseContent = '好的，我来帮您处理这个请求。请稍等...';
@@ -791,89 +734,6 @@ export default function Home() {
         <div className="flex-1 flex flex-col min-w-0">
           {tabs.length > 0 ? (
             <>
-              {/* Status Banner */}
-              {(docStatus !== 'draft' || syncStatus === 'conflict') && (
-                <div className={`px-4 py-2 flex items-center justify-between text-sm ${
-                  syncStatus === 'conflict' ? 'bg-amber-50 text-amber-800 border-b border-amber-100' :
-                  docStatus === 'pending_review' ? 'bg-amber-50 text-amber-800 border-b border-amber-100' :
-                  docStatus === 'approved' ? 'bg-emerald-50 text-emerald-800 border-b border-emerald-100' :
-                  'bg-red-50 text-red-800 border-b border-red-100'
-                }`}>
-                  <div className="flex items-center gap-2">
-                    {syncStatus === 'conflict' ? <AlertTriangle className="w-4 h-4" /> :
-                     docStatus === 'pending_review' ? <AlertTriangle className="w-4 h-4" /> :
-                     docStatus === 'approved' ? <CheckCircle className="w-4 h-4" /> :
-                     <XCircle className="w-4 h-4" />}
-                    <span className="font-medium">
-                      {syncStatus === 'conflict' ? (isConflictMode ? '正在解决冲突...' : '检测到版本冲突，请解决后继续') :
-                       docStatus === 'pending_review' ? '文档审核中 - 编辑已锁定' :
-                       docStatus === 'approved' ? '文档已审核通过 - 已归档' :
-                       '文档被驳回 - 请修改后重新提交'}
-                    </span>
-                  </div>
-                  {/* Simulation Controls for Demo */}
-                  <div className="flex gap-2">
-                    {syncStatus === 'conflict' && (
-                      isConflictMode ? (
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleResolveConflict('local')}
-                            className="px-2 py-0.5 bg-white border border-amber-200 hover:bg-amber-100 text-amber-800 rounded text-xs transition-colors"
-                          >
-                            保留本地
-                          </button>
-                          <button
-                            onClick={() => handleResolveConflict('remote')}
-                            className="px-2 py-0.5 bg-white border border-amber-200 hover:bg-amber-100 text-amber-800 rounded text-xs transition-colors"
-                          >
-                            保留云端
-                          </button>
-                          <div className="w-px h-3 bg-amber-200 mx-1" />
-                          <button
-                            onClick={() => handleResolveConflict('manual', editingContent)}
-                            className="px-2 py-0.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs transition-colors font-medium shadow-sm"
-                          >
-                            完成手动合并
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => setIsConflictMode(true)}
-                          className="px-2 py-0.5 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded text-xs transition-colors font-medium"
-                        >
-                          解决冲突
-                        </button>
-                      )
-                    )}
-
-                    {docStatus === 'pending_review' && (
-                      <>
-                        <button
-                          onClick={handleSimulateApproval}
-                          className="px-2 py-0.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded text-xs transition-colors"
-                        >
-                          [模拟] 通过
-                        </button>
-                        <button
-                          onClick={handleSimulateRejection}
-                          className="px-2 py-0.5 bg-red-100 hover:bg-red-200 text-red-700 rounded text-xs transition-colors"
-                        >
-                          [模拟] 驳回
-                        </button>
-                      </>
-                    )}
-                    {docStatus === 'rejected' && (
-                      <button
-                        onClick={() => setDocStatus('draft')}
-                        className="px-2 py-0.5 bg-white border border-red-200 hover:bg-red-50 text-red-700 rounded text-xs transition-colors"
-                      >
-                        重新编辑
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-
               <TabBar
                 tabs={tabs}
                 activeTabId={activeTabId}
@@ -892,6 +752,11 @@ export default function Home() {
                 onExport={handleExport}
                 collaborators={collaborators}
                 readOnly={isConflictMode}
+                isConflictMode={isConflictMode}
+                onResolveConflict={(choice) => {
+                  if (choice === 'manual') handleResolveConflict('manual', editingContent);
+                  else handleResolveConflict(choice);
+                }}
               />
               <div className="flex-1 flex overflow-hidden">
                 {isConflictMode ? (
@@ -999,6 +864,12 @@ export default function Home() {
         lastSavedAt={lastSavedAt}
         collaborators={collaborators}
         onSimulateConflict={handleSimulateConflict}
+        docStatus={docStatus}
+        isConflictMode={isConflictMode}
+        onResolveStart={() => setIsConflictMode(true)}
+        onSimulateApproval={handleSimulateApproval}
+        onSimulateRejection={handleSimulateRejection}
+        onReEdit={() => setDocStatus('draft')}
       />
 
       {/* Toast notifications */}
