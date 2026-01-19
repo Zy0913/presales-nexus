@@ -25,16 +25,18 @@ export const MarkdownEditor = React.forwardRef<HTMLTextAreaElement, MarkdownEdit
 }, ref) => {
   const internalRef = React.useRef<HTMLTextAreaElement>(null);
 
-  // Helper to handle both refs
-  const setRef = (element: HTMLTextAreaElement | null) => {
-    internalRef.current = element;
+  // Helper to handle both refs using useCallback
+  const setRef = React.useCallback((element: HTMLTextAreaElement | null) => {
+    // Update internal ref
+    (internalRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = element;
+    
+    // Update forwarded ref
     if (typeof ref === 'function') {
       ref(element);
     } else if (ref) {
-      // @ts-ignore
-      ref.current = element;
+      (ref as React.MutableRefObject<HTMLTextAreaElement | null>).current = element;
     }
-  };
+  }, [ref]);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
