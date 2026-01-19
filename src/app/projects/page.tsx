@@ -62,7 +62,7 @@ const mockProjectsData: Project[] = [
     customer: '深圳海关',
     category: '海关/口岸',
     status: 'active',
-    salesPerson: '李晓燕',
+    salesPerson: '李朋飞',
     salesRegion: '华南区',
     region: '广东省',
     budgetAmount: 29620000,
@@ -73,7 +73,7 @@ const mockProjectsData: Project[] = [
     expectedCloseDate: '2025-02-28',
     createdAt: '2024-12-01',
     updatedAt: '2025-01-19',
-    responsible: '李晓燕',
+    responsible: '李朋飞',
   },
   {
     id: 'proj_002',
@@ -102,7 +102,7 @@ const mockProjectsData: Project[] = [
     customer: '广州海关',
     category: '海关/口岸',
     status: 'pending',
-    salesPerson: '王思聪',
+    salesPerson: '王文渊',
     salesRegion: '华南区',
     region: '广东省',
     budgetAmount: 22000000,
@@ -113,7 +113,7 @@ const mockProjectsData: Project[] = [
     expectedCloseDate: '2025-04-30',
     createdAt: '2025-01-10',
     updatedAt: '2025-01-18',
-    responsible: '王思聪',
+    responsible: '王文渊',
   },
   {
     id: 'proj_004',
@@ -162,7 +162,7 @@ const mockProjectsData: Project[] = [
     customer: '福州海关',
     category: '海关/口岸',
     status: 'active',
-    salesPerson: '李晓燕',
+    salesPerson: '李朋飞',
     salesRegion: '华东区',
     region: '福建省',
     budgetAmount: 19500000,
@@ -173,7 +173,7 @@ const mockProjectsData: Project[] = [
     expectedCloseDate: '2025-06-30',
     createdAt: '2024-12-28',
     updatedAt: '2025-01-19',
-    responsible: '李晓燕',
+    responsible: '李朋飞',
   },
   {
     id: 'proj_007',
@@ -202,7 +202,7 @@ const mockProjectsData: Project[] = [
     customer: '厦门海关',
     category: '海关/口岸',
     status: 'lost',
-    salesPerson: '王思聪',
+    salesPerson: '王文渊',
     salesRegion: '华东区',
     region: '福建省',
     budgetAmount: 14500000,
@@ -213,7 +213,7 @@ const mockProjectsData: Project[] = [
     expectedCloseDate: '2024-12-31',
     createdAt: '2024-09-10',
     updatedAt: '2025-01-05',
-    responsible: '王思聪',
+    responsible: '王文渊',
   },
   {
     id: 'proj_009',
@@ -359,7 +359,7 @@ export default function ProjectsPage() {
       {/* Header */}
       <Header
         currentProject={null}
-        currentPath={['项目管理']}
+        currentPath={['项目资料库']}
         user={currentUser}
         notifications={mockNotifications}
         unreadCount={mockNotifications.filter(n => !n.isRead).length}

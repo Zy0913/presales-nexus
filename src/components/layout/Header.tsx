@@ -9,6 +9,7 @@ import {
   Settings,
   LogOut,
   User as UserIcon,
+  Users,
   Command,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -197,10 +198,10 @@ export function Header({
                   <UserIcon className="w-4 h-4 text-zinc-400" />
                   个人资料
                 </button>
-                <button className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-zinc-700 hover:bg-zinc-100 rounded-md transition-colors">
-                  <Settings className="w-4 h-4 text-zinc-400" />
-                  设置
-                </button>
+                <Link href="/admin/users" className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-zinc-700 hover:bg-zinc-100 rounded-md transition-colors">
+                  <Users className="w-4 h-4 text-zinc-400" />
+                  用户管理
+                </Link>
                 <div className="my-1 border-t border-zinc-100" />
                 <button className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-red-600 hover:bg-red-50 rounded-md transition-colors">
                   <LogOut className="w-4 h-4" />

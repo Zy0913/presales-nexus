@@ -8,27 +8,27 @@ export const mockUsers: User[] = [
     email: 'zhangmy@company.com',
     avatar: '',
     role: 'manager',
-    department: '售前解决方案部',
+    department: '方案设计部',
     createdAt: '2023-01-15T08:00:00Z',
     lastActiveAt: '2025-01-19T10:30:00Z',
   },
   {
     id: 'user_002',
-    name: '李晓燕',
+    name: '李朋飞',
     email: 'lixy@company.com',
     avatar: '',
     role: 'supervisor',
-    department: '售前解决方案部',
+    department: '方案设计部',
     createdAt: '2023-03-20T08:00:00Z',
     lastActiveAt: '2025-01-19T09:45:00Z',
   },
   {
     id: 'user_003',
-    name: '王思聪',
+    name: '王文渊',
     email: 'wangsc@company.com',
     avatar: '',
     role: 'employee',
-    department: '售前解决方案部',
+    department: '方案设计部',
     createdAt: '2023-06-10T08:00:00Z',
     lastActiveAt: '2025-01-19T11:00:00Z',
   },
@@ -38,7 +38,7 @@ export const mockUsers: User[] = [
     email: 'chenyt@company.com',
     avatar: '',
     role: 'employee',
-    department: '售前解决方案部',
+    department: '方案设计部',
     createdAt: '2023-08-15T08:00:00Z',
     lastActiveAt: '2025-01-18T17:30:00Z',
   },
@@ -48,7 +48,7 @@ export const mockUsers: User[] = [
     email: 'zhaokw@company.com',
     avatar: '',
     role: 'employee',
-    department: '售前解决方案部',
+    department: '方案设计部',
     createdAt: '2024-02-01T08:00:00Z',
     lastActiveAt: '2025-01-19T08:20:00Z',
   },
@@ -292,8 +292,8 @@ export const mockDocuments: Document[] = [
 
 - **版本号**: v3.0
 - **更新日期**: 2025-01-15
-- **编写人**: 王思聪
-- **审核人**: 李晓燕
+- **编写人**: 王文渊
+- **审核人**: 李朋飞
 
 ---
 
@@ -1254,7 +1254,7 @@ signature = HMAC-SHA256(
 - **投标单位**：XX 科技股份有限公司
 - **报价日期**：2025-01-15
 - **报价有效期**：90 天
-- **联系人**：李晓燕（售前经理）
+- **联系人**：李朋飞（售前经理）
 - **联系电话**：138-0000-1234
 
 ---
@@ -2032,7 +2032,7 @@ export const mockNotifications: Notification[] = [
     id: 'notif_001',
     type: 'approval_request',
     title: '审批请求',
-    content: '王思聪 提交了《系统架构设计方案》等待您的审批',
+    content: '王文渊 提交了《系统架构设计方案》等待您的审批',
     isRead: false,
     createdAt: '2025-01-18T10:30:00Z',
     projectId: 'proj_001',
@@ -2044,7 +2044,7 @@ export const mockNotifications: Notification[] = [
     id: 'notif_002',
     type: 'comment',
     title: '新评论',
-    content: '李晓燕 在《深圳湾口岸需求调研报告》中评论了您',
+    content: '李朋飞 在《深圳湾口岸需求调研报告》中评论了您',
     isRead: false,
     createdAt: '2025-01-17T15:20:00Z',
     projectId: 'proj_001',

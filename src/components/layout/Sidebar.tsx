@@ -12,6 +12,8 @@ import {
   ChevronRight,
   FolderKanban,
   Star,
+  Settings,
+  Plus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -19,6 +21,8 @@ import { FileTreeNode, Document, ProjectMember, Project } from '@/types';
 import { FileTree } from '@/components/file-tree/FileTree';
 import { cn } from '@/lib/utils';
 import { mockProjects } from '@/lib/mock-data';
+import { useMockData } from '@/hooks/use-mock-data';
+import { ProjectMemberDialog } from '@/components/modals/ProjectMemberDialog';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -64,7 +68,11 @@ export function Sidebar({
   const [isMembersExpanded, setIsMembersExpanded] = React.useState(false);
   const [isProjectMenuOpen, setIsProjectMenuOpen] = React.useState(false);
   const [projectSearchQuery, setProjectSearchQuery] = React.useState('');
+  const [isMemberDialogOpen, setIsMemberDialogOpen] = React.useState(false);
   const projectMenuRef = React.useRef<HTMLDivElement>(null);
+
+  const { getProjectMembers } = useMockData();
+  const activeMembers = currentProject ? getProjectMembers(currentProject.id) : projectMembers;
 
   // Close project menu when clicking outside
   React.useEffect(() => {
@@ -264,11 +272,11 @@ export function Sidebar({
 
       {/* Project Members - Collapsible */}
       <div className="border-t border-zinc-100">
-        <button
-          className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-zinc-500 hover:bg-zinc-100 transition-colors"
-          onClick={() => setIsMembersExpanded(!isMembersExpanded)}
-        >
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between px-3 py-2 group/members">
+          <button
+            className="flex items-center gap-2 text-xs font-medium text-zinc-500 hover:text-zinc-900 transition-colors flex-1"
+            onClick={() => setIsMembersExpanded(!isMembersExpanded)}
+          >
             {isMembersExpanded ? (
               <ChevronDown className="w-3.5 h-3.5" />
             ) : (
@@ -276,39 +284,67 @@ export function Sidebar({
             )}
             <Users className="w-3.5 h-3.5" />
             <span>项目成员</span>
-          </div>
-          <span className="text-zinc-400">{projectMembers.length}</span>
-        </button>
+            <span className="text-zinc-400 ml-auto mr-2">{activeMembers.length}</span>
+          </button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-5 w-5 text-zinc-400 hover:text-blue-600 opacity-0 group-hover/members:opacity-100 transition-opacity"
+            onClick={() => setIsMemberDialogOpen(true)}
+            title="管理成员"
+          >
+            <Settings className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+
         <div
           className={cn(
             'overflow-hidden transition-all duration-150',
-            isMembersExpanded ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'
+            isMembersExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
           )}
         >
           <div className="px-3 pb-3">
-            <div className="flex -space-x-1.5">
-              {projectMembers.slice(0, 5).map((member) => (
-                <div
-                  key={member.id}
-                  className="w-7 h-7 bg-zinc-200 rounded-full border-2 border-zinc-50 flex items-center justify-center"
-                  title={member.user.name}
-                >
-                  <span className="text-[10px] font-medium text-zinc-600">
+            <div className="space-y-1 mb-3 max-h-[300px] overflow-y-auto pr-1">
+              {activeMembers.map((member) => (
+                <div key={member.id} className="flex items-center gap-2 p-1.5 rounded-md hover:bg-zinc-50 group/item transition-colors">
+                  <div className="w-8 h-8 bg-zinc-100 rounded-full flex items-center justify-center flex-shrink-0 text-zinc-600 font-medium text-xs border border-zinc-200">
                     {member.user.name.slice(0, 1)}
-                  </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-medium text-zinc-700 truncate">
+                      {member.user.name}
+                    </div>
+                    <div className="text-[10px] text-zinc-400">
+                      {member.role === 'owner' ? '负责人' : member.role === 'editor' ? '编辑者' : '查看者'}
+                    </div>
+                  </div>
                 </div>
               ))}
-              {projectMembers.length > 5 && (
-                <div className="w-7 h-7 bg-zinc-300 rounded-full border-2 border-zinc-50 flex items-center justify-center">
-                  <span className="text-[10px] font-medium text-zinc-600">
-                    +{projectMembers.length - 5}
-                  </span>
-                </div>
-              )}
             </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full h-8 text-xs gap-1.5 text-zinc-600 border-zinc-200 bg-white hover:bg-zinc-50"
+              onClick={() => setIsMemberDialogOpen(true)}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              邀请成员
+            </Button>
           </div>
         </div>
       </div>
+
+      {/* Dialogs */}
+      {currentProject && (
+        <ProjectMemberDialog
+          isOpen={isMemberDialogOpen}
+          projectId={currentProject.id}
+          projectName={currentProject.name}
+          onClose={() => setIsMemberDialogOpen(false)}
+        />
+      )}
     </div>
   );
 }
