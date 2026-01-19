@@ -2,11 +2,13 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { MarkdownEditor } from './MarkdownEditor';
 
 interface SplitEditorProps {
   content: string;
   onChange: (content: string) => void;
   onSelectionChange?: (selection: { text: string; start: number; end: number } | null) => void;
+  onAIAction?: (action: string, text: string) => void;
   defaultSplitRatio?: number; // 0-1, default 0.5
   minRatio?: number;
   maxRatio?: number;
@@ -16,6 +18,7 @@ export function SplitEditor({
   content,
   onChange,
   onSelectionChange,
+  onAIAction,
   defaultSplitRatio = 0.5,
   minRatio = 0.25,
   maxRatio = 0.75,
@@ -27,38 +30,6 @@ export function SplitEditor({
   const [splitRatio, setSplitRatio] = React.useState(defaultSplitRatio);
   const [isDragging, setIsDragging] = React.useState(false);
   const [isSyncingScroll, setIsSyncingScroll] = React.useState(false);
-
-  // Handle selection change
-  const handleSelect = () => {
-    if (!editorRef.current || !onSelectionChange) return;
-
-    const start = editorRef.current.selectionStart;
-    const end = editorRef.current.selectionEnd;
-
-    const selectedText = content.substring(start, end);
-    onSelectionChange({ text: selectedText, start, end });
-  };
-
-  // Handle key down (e.g. Tab)
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      const textarea = editorRef.current;
-      if (!textarea) return;
-
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-
-      const newContent = content.substring(0, start) + '  ' + content.substring(end);
-      onChange(newContent);
-
-      setTimeout(() => {
-        textarea.selectionStart = textarea.selectionEnd = start + 2;
-        // Trigger selection update
-        handleSelect();
-      }, 0);
-    }
-  };
 
   // Handle drag to resize
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -224,21 +195,13 @@ export function SplitEditor({
         className="h-full flex flex-col overflow-hidden flex-shrink-0 border-r border-zinc-200"
         style={{ width: `calc(${splitRatio * 100}% - 3px)` }}
       >
-        <textarea
+        <MarkdownEditor
           ref={editorRef}
-          value={content}
-          onChange={(e) => onChange(e.target.value)}
-          onSelect={handleSelect}
-          onKeyDown={handleKeyDown}
+          content={content}
+          onChange={onChange}
+          onSelectionChange={onSelectionChange}
+          onAIAction={onAIAction}
           onScroll={handleEditorScroll}
-          placeholder="开始编写内容..."
-          className={cn(
-            'flex-1 w-full resize-none p-4 font-mono text-sm leading-relaxed',
-            'bg-white text-zinc-900 placeholder:text-zinc-400',
-            'focus:outline-none',
-            'markdown-editor'
-          )}
-          spellCheck={false}
         />
       </div>
 

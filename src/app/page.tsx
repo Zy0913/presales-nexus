@@ -584,6 +584,20 @@ export default function Home() {
     showToast('审核驳回，请修改', 'error');
   };
 
+  const handleAIAction = (action: string, text: string) => {
+    if (!isAIPanelOpen) setIsAIPanelOpen(true);
+
+    const prompts: Record<string, string> = {
+      explain: `请解释这段内容：\n\n> ${text}`,
+      polish: `请润色这段文字，使其更专业：\n\n> ${text}`,
+      continue: `请根据以下内容进行续写：\n\n> ${text}`,
+      translate: `请将这段文字翻译成英文：\n\n> ${text}`,
+    };
+
+    const message = prompts[action] || `请处理：${text}`;
+    handleSendMessage(message);
+  };
+
   const handleSendMessage = (message: string) => {
     setIsAILoading(true);
 
@@ -774,6 +788,7 @@ export default function Home() {
                           onChange={handleContentChange}
                           onSelectionChange={setSelection}
                           readOnly={isReadOnly}
+                          onAIAction={handleAIAction}
                         />
                       </div>
                     )}
@@ -788,6 +803,7 @@ export default function Home() {
                         content={editingContent}
                         onChange={handleContentChange}
                         onSelectionChange={setSelection}
+                        onAIAction={handleAIAction}
                       />
                     )}
                   </>
