@@ -42,6 +42,7 @@ interface SidebarProps {
   onDeleteNode?: (node: FileTreeNode) => void;
   onMoveNode?: (node: FileTreeNode) => void;
   onCopyNode?: (node: FileTreeNode) => void;
+  onAssignTask?: (node: FileTreeNode) => void;
   onOpenSearch?: () => void;
 }
 
@@ -63,6 +64,7 @@ export function Sidebar({
   onDeleteNode,
   onMoveNode,
   onCopyNode,
+  onAssignTask,
   onOpenSearch,
 }: SidebarProps) {
   const [isRecentExpanded, setIsRecentExpanded] = React.useState(false);
@@ -209,6 +211,7 @@ export function Sidebar({
             onDelete={onDeleteNode}
             onMove={onMoveNode}
             onCopy={onCopyNode}
+            onAssignTask={onAssignTask}
             onOpenSearch={onOpenSearch}
           />
         </div>

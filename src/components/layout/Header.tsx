@@ -9,6 +9,7 @@ import {
   LogOut,
   User as UserIcon,
   Users,
+  CheckSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Project, User, Notification, Document, Folder } from '@/types';
@@ -21,12 +22,14 @@ interface HeaderProps {
   user: User;
   notifications: Notification[];
   unreadCount: number;
+  unfinishedTaskCount?: number;
   documents?: Document[];
   projects?: Project[];
   folders?: Folder[];
   onProjectChange?: (projectId: string) => void;
   onSelectDocument?: (docId: string) => void;
   onSelectProject?: (projectId: string) => void;
+  onOpenTaskBoard?: () => void;
   isSearchOpen?: boolean;
   onSearchOpenChange?: (open: boolean) => void;
 }
@@ -36,11 +39,13 @@ export function Header({
   user,
   notifications,
   unreadCount,
+  unfinishedTaskCount = 0,
   documents = [],
   projects = [],
   folders = [],
   onSelectDocument,
   onSelectProject,
+  onOpenTaskBoard,
   isSearchOpen: externalIsSearchOpen,
   onSearchOpenChange,
 }: HeaderProps) {
@@ -124,6 +129,24 @@ export function Header({
         >
           <Search className="w-4 h-4 text-zinc-500" />
         </Button>
+
+        {/* My Tasks */}
+        <div className="relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={onOpenTaskBoard}
+            title="我的任务"
+          >
+            <CheckSquare className="w-4 h-4 text-zinc-500" />
+            {unfinishedTaskCount > 0 && (
+              <span className="absolute top-1 right-1 w-4 h-4 bg-blue-600 text-white text-[10px] rounded-full flex items-center justify-center font-medium">
+                {unfinishedTaskCount > 9 ? '9+' : unfinishedTaskCount}
+              </span>
+            )}
+          </Button>
+        </div>
 
         {/* Notifications */}
         <div className="relative">

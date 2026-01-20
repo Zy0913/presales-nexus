@@ -26,6 +26,7 @@ import {
   mockUsers,
   mockFolders,
   getDocumentById,
+  mockTasks,
 } from '@/lib/mock-data';
 import { countWords, generateId } from '@/lib/utils';
 import {
@@ -35,11 +36,18 @@ import {
   Document,
   ChatSession,
   ChatMessage,
-  User, // Import User type
-  DocumentStatus, // Import DocumentStatus
-  SyncStatus, // Import SyncStatus
+  User,
+  DocumentStatus,
+  SyncStatus,
+  Task,
+  TaskStatus,
+  Tab,
+  TabType,
 } from '@/types';
 import { FileText, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import TaskBoard from '@/components/tasks/TaskBoard';
+import ManagerTaskBoard from '@/components/tasks/ManagerTaskBoard';
+import AssignTaskDialog from '@/components/tasks/AssignTaskDialog';
 
 export default function Home() {
   // Project state
@@ -56,7 +64,7 @@ export default function Home() {
 
   // Editor state
   const [tabs, setTabs] = React.useState<EditorTab[]>([
-    { id: 'tab_001', documentId: 'doc_001', title: '客户需求调研报告', isModified: false },
+    { id: 'tab_001', documentId: 'doc_001', title: '客户需求调研报告', type: 'document', isModified: false },
   ]);
   const [activeTabId, setActiveTabId] = React.useState<string | null>('tab_001');
   const [viewMode, setViewMode] = React.useState<EditorViewMode>('split');
@@ -102,6 +110,12 @@ export default function Home() {
   // Search dialog state
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
 
+  // Task state
+  const [tasks, setTasks] = React.useState<Task[]>(mockTasks);
+  const [isAssignTaskDialogOpen, setIsAssignTaskDialogOpen] = React.useState(false);
+  const [documentToAssign, setDocumentToAssign] = React.useState<Document | null>(null);
+  const [documentPathToAssign, setDocumentPathToAssign] = React.useState<string>('');
+
   // Toast
   const { toasts, showToast } = useToast();
 
@@ -134,6 +148,16 @@ export default function Home() {
   const hasUnsavedChanges = editingContent !== originalContent;
   const isReadOnly = docStatus === 'pending_review' || docStatus === 'approved';
 
+  // 计算未完成任务数量
+  const unfinishedTaskCount = React.useMemo(() => {
+    return tasks.filter(
+      (task) => task.assigneeId === currentUser.id && task.status !== 'completed'
+    ).length;
+  }, [tasks]);
+
+  // 判断当前是否显示任务看板 (已废弃，使用标签页代替)
+  // const [isTaskBoardOpen, setIsTaskBoardOpen] = React.useState(false);
+
   // Handlers
   const handleNodeSelect = (node: FileTreeNode) => {
     if (node.type === 'document') {
@@ -157,6 +181,7 @@ export default function Home() {
             id: `tab_${generateId()}`,
             documentId: node.id,
             title: doc.title,
+            type: 'document',
             isModified: false,
           };
           setTabs([...tabs, newTab]);
@@ -197,6 +222,7 @@ export default function Home() {
         id: `tab_${generateId()}`,
         documentId: docId,
         title: doc.title,
+        type: 'document',
         isModified: false,
       };
       setTabs([...tabs, newTab]);
@@ -616,6 +642,160 @@ export default function Home() {
     showToast('审核驳回，请修改', 'error');
   };
 
+  // Task handlers
+  const handleOpenTaskBoard = () => {
+    // 根据用户角色决定打开哪个看板
+    if (currentUser.role === 'manager' || currentUser.role === 'supervisor') {
+      // 管理层打开团队任务看板
+      const existingTab = tabs.find(t => t.type === 'manager_task_board');
+      if (existingTab) {
+        setActiveTabId(existingTab.id);
+      } else {
+        const newTab: EditorTab = {
+          id: `tab_manager_tasks_${generateId()}`,
+          title: currentUser.role === 'manager' ? '团队任务总览' : '团队任务看板',
+          type: 'manager_task_board',
+          isModified: false,
+        };
+        setTabs([...tabs, newTab]);
+        setActiveTabId(newTab.id);
+      }
+    } else {
+      // 员工打开个人任务看板
+      const existingTab = tabs.find(t => t.type === 'task_board');
+      if (existingTab) {
+        setActiveTabId(existingTab.id);
+      } else {
+        const newTab: EditorTab = {
+          id: `tab_tasks_${generateId()}`,
+          title: '我的任务',
+          type: 'task_board',
+          isModified: false,
+        };
+        setTabs([...tabs, newTab]);
+        setActiveTabId(newTab.id);
+      }
+    }
+  };
+
+  const handleAssignTask = (node: FileTreeNode) => {
+    const doc = getDocumentById(node.id);
+    if (!doc) return;
+
+    // 构建文档路径
+    const buildPath = (nodeId: string, tree: FileTreeNode[]): string => {
+      for (const n of tree) {
+        if (n.id === nodeId) {
+          return n.name;
+        }
+        if (n.children) {
+          const childPath = buildPath(nodeId, n.children);
+          if (childPath) {
+            return `${n.name}/${childPath}`;
+          }
+        }
+      }
+      return '';
+    };
+
+    const path = buildPath(node.id, fileTree);
+    setDocumentToAssign(doc);
+    setDocumentPathToAssign(`/${path}`);
+    setIsAssignTaskDialogOpen(true);
+  };
+
+  const handleTaskAssign = (newTask: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'timeline'>) => {
+    const task: Task = {
+      ...newTask,
+      id: `task_${generateId()}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      timeline: [
+        {
+          type: 'assigned',
+          userId: newTask.assignerId,
+          userName: newTask.assignerName,
+          timestamp: new Date().toISOString(),
+        },
+      ],
+    };
+
+    setTasks([...tasks, task]);
+    showToast(`已将任务分配给 ${newTask.assigneeName}`, 'success');
+  };
+
+  const handleUpdateTaskProgress = (taskId: string, progress: number) => {
+    setTasks(
+      tasks.map((task) => {
+        if (task.id === taskId) {
+          return {
+            ...task,
+            progress,
+            timeline: [
+              ...task.timeline,
+              {
+                type: 'progress_updated',
+                userId: currentUser.id,
+                userName: currentUser.name,
+                timestamp: new Date().toISOString(),
+                note: `更新进度至 ${progress}%`,
+              },
+            ],
+            updatedAt: new Date().toISOString(),
+          };
+        }
+        return task;
+      })
+    );
+    showToast(`进度已更新至 ${progress}%`, 'success');
+  };
+
+  const handleUpdateTaskStatus = (taskId: string, status: TaskStatus, note?: string) => {
+    setTasks(
+      tasks.map((task) => {
+        if (task.id === taskId) {
+          const updatedTask: Task = {
+            ...task,
+            status,
+            timeline: [
+              ...task.timeline,
+              {
+                type: status === 'completed' ? 'completed' : status === 'blocked' ? 'blocked' : 'status_changed',
+                userId: currentUser.id,
+                userName: currentUser.name,
+                timestamp: new Date().toISOString(),
+                note,
+              },
+            ],
+            updatedAt: new Date().toISOString(),
+          };
+
+          if (status === 'completed') {
+            updatedTask.completedAt = new Date().toISOString();
+            updatedTask.progress = 100;
+          }
+
+          return updatedTask;
+        }
+        return task;
+      })
+    );
+
+    const statusText = {
+      todo: '待办',
+      in_progress: '进行中',
+      completed: '已完成',
+      blocked: '受阻',
+    };
+
+    showToast(`任务状态已更新为：${statusText[status]}`, 'success');
+  };
+
+  const handleOpenDocumentFromTask = (documentId: string, documentName: string) => {
+    // Open document
+    openDocumentById(documentId);
+  };
+
   const handleAIAction = (action: string, text: string, customQuestion?: string) => {
     if (!isAIPanelOpen) setIsAIPanelOpen(true);
 
@@ -725,12 +905,14 @@ export default function Home() {
         user={currentUser}
         notifications={mockNotifications}
         unreadCount={mockNotifications.filter(n => !n.isRead).length}
+        unfinishedTaskCount={unfinishedTaskCount}
         documents={mockDocuments}
         projects={mockProjects}
         folders={mockFolders}
         onSelectDocument={(docId) => {
           openDocumentById(docId);
         }}
+        onOpenTaskBoard={handleOpenTaskBoard}
         isSearchOpen={isSearchOpen}
         onSearchOpenChange={setIsSearchOpen}
       />
@@ -757,6 +939,7 @@ export default function Home() {
             onDeleteNode={handleDeleteNode}
             onMoveNode={handleMoveNode}
             onCopyNode={handleCopyNode}
+            onAssignTask={handleAssignTask}
             onOpenSearch={() => setIsSearchOpen(true)}
           />
         ) : (
@@ -786,6 +969,7 @@ export default function Home() {
               onDeleteNode={handleDeleteNode}
               onMoveNode={handleMoveNode}
               onCopyNode={handleCopyNode}
+              onAssignTask={handleAssignTask}
               onOpenSearch={() => setIsSearchOpen(true)}
             />
           </ResizablePanel>
@@ -801,62 +985,85 @@ export default function Home() {
                 onTabSelect={handleTabSelect}
                 onTabClose={handleTabClose}
               />
-              <EditorToolbar
-                viewMode={viewMode}
-                hasUnsavedChanges={hasUnsavedChanges}
-                isSaving={isSaving}
-                onViewModeChange={setViewMode}
-                onSave={handleSave}
-                onFormat={handleFormat}
-                onViewHistory={handleViewHistory}
-                onSubmitReview={handleSubmitReview}
-                onExport={handleExport}
-                collaborators={collaborators}
-                currentUser={currentUser}
-                readOnly={isConflictMode}
-                isConflictMode={isConflictMode}
-                onResolveConflict={(choice) => {
-                  if (choice === 'manual') handleResolveConflict('manual', editingContent);
-                  else handleResolveConflict(choice);
-                }}
-              />
-              <div className="flex-1 flex overflow-hidden">
-                {isConflictMode ? (
-                  <DiffEditor
-                    content={editingContent}
-                    onChange={handleContentChange}
-                    onSelectionChange={setSelection}
+              {tabs.find(t => t.id === activeTabId)?.type === 'task_board' ? (
+                // 个人任务看板
+                <TaskBoard
+                  tasks={tasks}
+                  currentUserId={currentUser.id}
+                  onOpenDocument={handleOpenDocumentFromTask}
+                  onUpdateProgress={handleUpdateTaskProgress}
+                  onUpdateStatus={handleUpdateTaskStatus}
+                />
+              ) : tabs.find(t => t.id === activeTabId)?.type === 'manager_task_board' ? (
+                // 管理层任务看板
+                <ManagerTaskBoard
+                  tasks={tasks}
+                  users={mockUsers}
+                  currentUser={currentUser}
+                  onOpenDocument={handleOpenDocumentFromTask}
+                  onUpdateProgress={handleUpdateTaskProgress}
+                  onUpdateStatus={handleUpdateTaskStatus}
+                />
+              ) : (
+                <>
+                  <EditorToolbar
+                    viewMode={viewMode}
+                    hasUnsavedChanges={hasUnsavedChanges}
+                    isSaving={isSaving}
+                    onViewModeChange={setViewMode}
+                    onSave={handleSave}
+                    onFormat={handleFormat}
+                    onViewHistory={handleViewHistory}
+                    onSubmitReview={handleSubmitReview}
+                    onExport={handleExport}
+                    collaborators={collaborators}
+                    currentUser={currentUser}
+                    readOnly={isConflictMode}
+                    isConflictMode={isConflictMode}
+                    onResolveConflict={(choice) => {
+                      if (choice === 'manual') handleResolveConflict('manual', editingContent);
+                      else handleResolveConflict(choice);
+                    }}
                   />
-                ) : (
-                  <>
-                    {viewMode === 'edit' && (
-                      <div className="flex-1">
-                        <MarkdownEditor
-                          content={editingContent}
-                          onChange={handleContentChange}
-                          onSelectionChange={setSelection}
-                          readOnly={isReadOnly}
-                          onAIAction={handleAIAction}
-                        />
-                      </div>
-                    )}
-                    {viewMode === 'preview' && (
-                      <div className="flex-1 bg-white">
-                        <MarkdownPreview content={editingContent} />
-                      </div>
-                    )}
-                    {viewMode === 'split' && (
-                      <SplitEditor
-                        key={activeTabId}
+                  <div className="flex-1 flex overflow-hidden">
+                    {isConflictMode ? (
+                      <DiffEditor
                         content={editingContent}
                         onChange={handleContentChange}
                         onSelectionChange={setSelection}
-                        onAIAction={handleAIAction}
                       />
+                    ) : (
+                      <>
+                        {viewMode === 'edit' && (
+                          <div className="flex-1">
+                            <MarkdownEditor
+                              content={editingContent}
+                              onChange={handleContentChange}
+                              onSelectionChange={setSelection}
+                              readOnly={isReadOnly}
+                              onAIAction={handleAIAction}
+                            />
+                          </div>
+                        )}
+                        {viewMode === 'preview' && (
+                          <div className="flex-1 bg-white">
+                            <MarkdownPreview content={editingContent} />
+                          </div>
+                        )}
+                        {viewMode === 'split' && (
+                          <SplitEditor
+                            key={activeTabId}
+                            content={editingContent}
+                            onChange={handleContentChange}
+                            onSelectionChange={setSelection}
+                            onAIAction={handleAIAction}
+                          />
+                        )}
+                      </>
                     )}
-                  </>
-                )}
-              </div>
+                  </div>
+                </>
+              )}
             </>
           ) : (
             // Empty state
@@ -967,6 +1174,25 @@ export default function Home() {
         onClose={() => setIsHistoryOpen(false)}
         onRestore={handleRestoreHistory}
       />
+
+      {/* Assign Task Dialog */}
+      {documentToAssign && (
+        <AssignTaskDialog
+          isOpen={isAssignTaskDialogOpen}
+          onClose={() => {
+            setIsAssignTaskDialogOpen(false);
+            setDocumentToAssign(null);
+            setDocumentPathToAssign('');
+          }}
+          document={documentToAssign}
+          documentPath={documentPathToAssign}
+          projectName={currentProject.name}
+          projectId={currentProject.id}
+          teamMembers={mockUsers}
+          currentUser={currentUser}
+          onAssign={handleTaskAssign}
+        />
+      )}
     </div>
   );
 }

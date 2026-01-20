@@ -19,6 +19,7 @@ import {
   Copy,
   MoreHorizontal,
   Search,
+  UserPlus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FileTreeNode, DocumentStatus } from '@/types';
@@ -35,6 +36,7 @@ interface FileTreeProps {
   onDelete?: (node: FileTreeNode) => void;
   onMove?: (node: FileTreeNode) => void;
   onCopy?: (node: FileTreeNode) => void;
+  onAssignTask?: (node: FileTreeNode) => void;
   onOpenSearch?: () => void;
   depth?: number;
   isRoot?: boolean;
@@ -52,6 +54,7 @@ export function FileTree({
   onDelete,
   onMove,
   onCopy,
+  onAssignTask,
   onOpenSearch,
   depth = 0,
   isRoot = true,
@@ -167,6 +170,7 @@ export function FileTree({
           onDelete={onDelete}
           onMove={onMove}
           onCopy={onCopy}
+          onAssignTask={onAssignTask}
           depth={depth}
         />
       ))}
@@ -186,6 +190,7 @@ interface TreeNodeProps {
   onDelete?: (node: FileTreeNode) => void;
   onMove?: (node: FileTreeNode) => void;
   onCopy?: (node: FileTreeNode) => void;
+  onAssignTask?: (node: FileTreeNode) => void;
   depth: number;
 }
 
@@ -201,6 +206,7 @@ function TreeNode({
   onDelete,
   onMove,
   onCopy,
+  onAssignTask,
   depth,
 }: TreeNodeProps) {
   const [isHovered, setIsHovered] = React.useState(false);
@@ -422,6 +428,22 @@ function TreeNode({
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
+                {/* 分配任务选项 - 只对文档显示 */}
+                {!isFolder && onAssignTask && (
+                  <>
+                    <button
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors"
+                      onClick={() => {
+                        onAssignTask(node);
+                        setShowMoreMenu(false);
+                      }}
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      分配任务
+                    </button>
+                    <div className="my-1 border-t border-zinc-100" />
+                  </>
+                )}
                 <button
                   className="w-full flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100 transition-colors"
                   onClick={() => {
@@ -474,6 +496,7 @@ function TreeNode({
           onDelete={onDelete}
           onMove={onMove}
           onCopy={onCopy}
+          onAssignTask={onAssignTask}
           depth={depth + 1}
           isRoot={false}
         />

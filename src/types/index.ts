@@ -109,7 +109,8 @@ export type EditorViewMode = 'edit' | 'preview' | 'split';
 // 编辑器标签页
 export interface EditorTab {
   id: string;
-  documentId: string;
+  type?: 'document' | 'task_board' | 'manager_task_board';
+  documentId?: string; // Optional for task_board and manager_task_board
   title: string;
   isModified: boolean;
 }
@@ -160,4 +161,91 @@ export interface Notification {
   documentId?: string;
   actionUrl?: string;
   actionLabel?: string;
+}
+
+// 任务状态
+export type TaskStatus = 'todo' | 'in_progress' | 'completed' | 'blocked';
+
+// 任务优先级
+export type TaskPriority = 'urgent' | 'high' | 'normal' | 'low';
+
+// 任务时间线事件类型
+export type TaskTimelineEventType =
+  | 'assigned'
+  | 'started'
+  | 'progress_updated'
+  | 'completed'
+  | 'blocked'
+  | 'status_changed';
+
+// 任务时间线事件
+export interface TaskTimelineEvent {
+  type: TaskTimelineEventType;
+  userId: string;
+  userName: string;
+  timestamp: string;
+  note?: string;
+}
+
+// 任务
+export interface Task {
+  id: string;
+  projectId: string;
+  projectName: string;
+
+  // 基本信息
+  title: string;
+  description?: string;
+
+  // 分配信息
+  assignerId: string;
+  assignerName: string;
+  assigneeId: string;
+  assigneeName: string;
+  assignedAt: string;
+
+  // 状态与优先级
+  status: TaskStatus;
+  priority: TaskPriority;
+
+  // 时间
+  dueDate?: string;
+
+  // 进度
+  progress: number; // 0-100
+
+  // 关联文档
+  documentId: string;
+  documentName: string;
+  documentPath: string;
+
+  // 时间线
+  timeline: TaskTimelineEvent[];
+
+  // 元数据
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
+}
+
+// 标签页类型
+export type TabType = 'document' | 'task_board';
+
+// 标签页
+export interface Tab {
+  id: string;
+  type: TabType;
+  title: string;
+  icon?: string;
+
+  // 文档标签页特有
+  documentId?: string;
+
+  // 任务标签页特有
+  taskBoardType?: 'my_tasks';
+
+  // 状态
+  isActive: boolean;
+  isDirty?: boolean;
+  canClose: boolean;
 }
