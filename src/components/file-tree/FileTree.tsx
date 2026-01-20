@@ -18,6 +18,7 @@ import {
   Move,
   Copy,
   MoreHorizontal,
+  Search,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FileTreeNode, DocumentStatus } from '@/types';
@@ -34,6 +35,7 @@ interface FileTreeProps {
   onDelete?: (node: FileTreeNode) => void;
   onMove?: (node: FileTreeNode) => void;
   onCopy?: (node: FileTreeNode) => void;
+  onOpenSearch?: () => void;
   depth?: number;
   isRoot?: boolean;
 }
@@ -50,6 +52,7 @@ export function FileTree({
   onDelete,
   onMove,
   onCopy,
+  onOpenSearch,
   depth = 0,
   isRoot = true,
 }: FileTreeProps) {
@@ -86,6 +89,13 @@ export function FileTree({
         <div className="flex items-center justify-between px-2 py-1.5 mb-1">
           <span className="text-xs font-medium text-zinc-400">文档目录</span>
           <div className="flex items-center gap-0.5">
+            <button
+              className="p-1 rounded hover:bg-zinc-200 transition-colors"
+              onClick={onOpenSearch}
+              title="搜索文档"
+            >
+              <Search className="w-3.5 h-3.5 text-zinc-500" />
+            </button>
             <button
               ref={buttonRef}
               className="p-1 rounded hover:bg-zinc-200 transition-colors"

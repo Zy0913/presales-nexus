@@ -23,7 +23,8 @@ import {
   mockChatSessions,
   mockNotifications,
   currentUser,
-  mockUsers, // Import mockUsers
+  mockUsers,
+  mockFolders,
   getDocumentById,
 } from '@/lib/mock-data';
 import { countWords, generateId } from '@/lib/utils';
@@ -98,16 +99,19 @@ export default function Home() {
   // Collaborators state
   const [collaborators, setCollaborators] = React.useState<User[]>([]);
 
+  // Search dialog state
+  const [isSearchOpen, setIsSearchOpen] = React.useState(false);
+
   // Toast
   const { toasts, showToast } = useToast();
 
   // Simulate collaborators joining
   React.useEffect(() => {
     const timer = setTimeout(() => {
-      // Mock other users joining
-      const otherUsers = mockUsers.filter(u => u.id !== currentUser.id).slice(0, 3);
-      setCollaborators(otherUsers);
-      showToast(`${otherUsers[0].name} 等 3 人正在协同编辑`, 'info');
+      // Mock other users joining - 包含当前用户自己
+      const otherUsers = mockUsers.filter(u => u.id !== currentUser.id).slice(0, 2);
+      setCollaborators([currentUser, ...otherUsers]);
+      showToast(`${otherUsers[0].name} 等 ${otherUsers.length} 人加入协同编辑`, 'info');
     }, 1500);
     return () => clearTimeout(timer);
   }, [showToast]);
@@ -172,6 +176,34 @@ export default function Home() {
       newExpanded.add(folderId);
     }
     setExpandedFolderIds(newExpanded);
+  };
+
+  // Open document by ID (for search results)
+  const openDocumentById = (docId: string) => {
+    const doc = getDocumentById(docId);
+    if (!doc) return;
+
+    setSelectedNodeId(docId);
+
+    // Check if already open
+    const existingTab = tabs.find(t => t.documentId === docId);
+    if (existingTab) {
+      setActiveTabId(existingTab.id);
+      setEditingContent(doc.content);
+      setOriginalContent(doc.content);
+    } else {
+      // Open new tab
+      const newTab: EditorTab = {
+        id: `tab_${generateId()}`,
+        documentId: docId,
+        title: doc.title,
+        isModified: false,
+      };
+      setTabs([...tabs, newTab]);
+      setActiveTabId(newTab.id);
+      setEditingContent(doc.content);
+      setOriginalContent(doc.content);
+    }
   };
 
   const handleProjectChange = (projectId: string) => {
@@ -584,7 +616,7 @@ export default function Home() {
     showToast('审核驳回，请修改', 'error');
   };
 
-  const handleAIAction = (action: string, text: string) => {
+  const handleAIAction = (action: string, text: string, customQuestion?: string) => {
     if (!isAIPanelOpen) setIsAIPanelOpen(true);
 
     const prompts: Record<string, string> = {
@@ -594,7 +626,12 @@ export default function Home() {
       translate: `请将这段文字翻译成英文：\n\n> ${text}`,
     };
 
-    const message = prompts[action] || `请处理：${text}`;
+    let message: string;
+    if (action === 'ask' && customQuestion) {
+      message = `关于以下内容：\n\n> ${text}\n\n${customQuestion}`;
+    } else {
+      message = prompts[action] || `请处理：${text}`;
+    }
     handleSendMessage(message);
   };
 
@@ -688,6 +725,14 @@ export default function Home() {
         user={currentUser}
         notifications={mockNotifications}
         unreadCount={mockNotifications.filter(n => !n.isRead).length}
+        documents={mockDocuments}
+        projects={mockProjects}
+        folders={mockFolders}
+        onSelectDocument={(docId) => {
+          openDocumentById(docId);
+        }}
+        isSearchOpen={isSearchOpen}
+        onSearchOpenChange={setIsSearchOpen}
       />
 
       {/* Main content */}
@@ -712,6 +757,7 @@ export default function Home() {
             onDeleteNode={handleDeleteNode}
             onMoveNode={handleMoveNode}
             onCopyNode={handleCopyNode}
+            onOpenSearch={() => setIsSearchOpen(true)}
           />
         ) : (
           <ResizablePanel
@@ -740,6 +786,7 @@ export default function Home() {
               onDeleteNode={handleDeleteNode}
               onMoveNode={handleMoveNode}
               onCopyNode={handleCopyNode}
+              onOpenSearch={() => setIsSearchOpen(true)}
             />
           </ResizablePanel>
         )}
@@ -765,6 +812,7 @@ export default function Home() {
                 onSubmitReview={handleSubmitReview}
                 onExport={handleExport}
                 collaborators={collaborators}
+                currentUser={currentUser}
                 readOnly={isConflictMode}
                 isConflictMode={isConflictMode}
                 onResolveConflict={(choice) => {
@@ -845,6 +893,7 @@ export default function Home() {
               currentSession={currentSession}
               contextDocs={contextDocs}
               isLoading={isAILoading}
+              projectName={currentProject.name}
               onToggle={() => setIsAIPanelOpen(false)}
               onSendMessage={handleSendMessage}
               onSessionSelect={setCurrentSessionId}
@@ -861,6 +910,7 @@ export default function Home() {
             currentSession={currentSession}
             contextDocs={contextDocs}
             isLoading={isAILoading}
+            projectName={currentProject.name}
             onToggle={() => setIsAIPanelOpen(true)}
             onSendMessage={handleSendMessage}
             onSessionSelect={setCurrentSessionId}

@@ -42,6 +42,7 @@ interface SidebarProps {
   onDeleteNode?: (node: FileTreeNode) => void;
   onMoveNode?: (node: FileTreeNode) => void;
   onCopyNode?: (node: FileTreeNode) => void;
+  onOpenSearch?: () => void;
 }
 
 export function Sidebar({
@@ -62,8 +63,8 @@ export function Sidebar({
   onDeleteNode,
   onMoveNode,
   onCopyNode,
+  onOpenSearch,
 }: SidebarProps) {
-  const [searchQuery, setSearchQuery] = React.useState('');
   const [isRecentExpanded, setIsRecentExpanded] = React.useState(false);
   const [isMembersExpanded, setIsMembersExpanded] = React.useState(false);
   const [isProjectMenuOpen, setIsProjectMenuOpen] = React.useState(false);
@@ -193,20 +194,6 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* Search */}
-      <div className="px-2 py-2">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
-          <input
-            type="text"
-            placeholder="搜索文档..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-8 pl-8 pr-3 text-[13px] bg-white border border-zinc-200 rounded-md placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/10"
-          />
-        </div>
-      </div>
-
       {/* File Tree with hover actions */}
       <ScrollArea className="flex-1">
         <div className="px-1.5 pb-2">
@@ -222,6 +209,7 @@ export function Sidebar({
             onDelete={onDeleteNode}
             onMove={onMoveNode}
             onCopy={onCopyNode}
+            onOpenSearch={onOpenSearch}
           />
         </div>
       </ScrollArea>

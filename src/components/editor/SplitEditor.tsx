@@ -8,7 +8,7 @@ interface SplitEditorProps {
   content: string;
   onChange: (content: string) => void;
   onSelectionChange?: (selection: { text: string; start: number; end: number } | null) => void;
-  onAIAction?: (action: string, text: string) => void;
+  onAIAction?: (action: string, text: string, customQuestion?: string) => void;
   defaultSplitRatio?: number; // 0-1, default 0.5
   minRatio?: number;
   maxRatio?: number;
@@ -131,10 +131,13 @@ export function SplitEditor({
     // Escape HTML
     html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-    // Headers
-    html = html.replace(/^### (.+)$/gm, '<h3 class="text-lg font-semibold mb-2 mt-4 text-zinc-900">$1</h3>');
-    html = html.replace(/^## (.+)$/gm, '<h2 class="text-xl font-semibold mb-3 mt-6 text-zinc-900">$1</h2>');
-    html = html.replace(/^# (.+)$/gm, '<h1 class="text-2xl font-bold mb-4 pb-2 border-b border-zinc-200 text-zinc-900">$1</h1>');
+    // Headers（从多到少处理，避免误匹配）- 使用 \s+ 匹配空格
+    html = html.replace(/^######\s+(.+)$/gm, '<h6 class="text-sm font-medium mb-1 mt-2 text-zinc-800">$1</h6>');
+    html = html.replace(/^#####\s+(.+)$/gm, '<h5 class="text-sm font-medium mb-1 mt-2 text-zinc-800">$1</h5>');
+    html = html.replace(/^####\s+(.+)$/gm, '<h4 class="text-base font-semibold mb-2 mt-3 text-zinc-900">$1</h4>');
+    html = html.replace(/^###\s+(.+)$/gm, '<h3 class="text-lg font-semibold mb-2 mt-4 text-zinc-900">$1</h3>');
+    html = html.replace(/^##\s+(.+)$/gm, '<h2 class="text-xl font-semibold mb-3 mt-6 text-zinc-900">$1</h2>');
+    html = html.replace(/^#\s+(.+)$/gm, '<h1 class="text-2xl font-bold mb-4 pb-2 border-b border-zinc-200 text-zinc-900">$1</h1>');
 
     // Bold and Italic
     html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold">$1</strong>');

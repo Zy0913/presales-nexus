@@ -52,6 +52,7 @@ interface EditorToolbarProps {
   onSubmitReview?: () => void;
   onExport?: (type: string) => void;
   collaborators?: User[];
+  currentUser?: User;
   readOnly?: boolean;
   isConflictMode?: boolean;
   onResolveConflict?: (choice: 'local' | 'remote' | 'manual') => void;
@@ -72,6 +73,7 @@ export function EditorToolbar({
   onSubmitReview,
   onExport,
   collaborators = [],
+  currentUser,
   readOnly = false,
   isConflictMode = false,
   onResolveConflict,
@@ -135,16 +137,23 @@ export function EditorToolbar({
             {collaborators.length > 0 && !isConflictMode && (
               <div className="flex items-center mr-2 border-r border-zinc-200 pr-3 h-5">
                 <div className="flex items-center -space-x-2">
-                  {collaborators.map((user) => (
-                    <Tooltip key={user.id}>
-                      <TooltipTrigger asChild>
-                        <div className="w-6 h-6 rounded-full border-2 border-white bg-indigo-100 flex items-center justify-center text-[10px] text-indigo-700 font-medium cursor-default ring-1 ring-white">
-                          {user.name.slice(0, 1)}
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>{user.name} 正在编辑</TooltipContent>
-                    </Tooltip>
-                  ))}
+                  {collaborators.map((user) => {
+                    const isCurrentUser = currentUser && user.id === currentUser.id;
+                    return (
+                      <Tooltip key={user.id}>
+                        <TooltipTrigger asChild>
+                          <div className={`w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-medium cursor-default ring-1 ring-white ${
+                            isCurrentUser
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : 'bg-indigo-100 text-indigo-700'
+                          }`}>
+                            {user.name.slice(0, 1)}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>{isCurrentUser ? '我' : user.name} 正在编辑</TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
                 </div>
                 <span className="text-[10px] text-zinc-400 ml-2">{collaborators.length} 人在线</span>
               </div>

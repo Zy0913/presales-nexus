@@ -1,4 +1,4 @@
-import { User, Project, ProjectMember, Document, FileTreeNode, ChatSession, Notification } from '@/types';
+import { User, Project, ProjectMember, Document, FileTreeNode, ChatSession, Notification, Folder } from '@/types';
 
 // Mock 用户
 export const mockUsers: User[] = [
@@ -2089,3 +2089,14 @@ export const getDocumentById = (docId: string): Document | undefined => {
 export const getUserById = (userId: string): User | undefined => {
   return mockUsers.find(u => u.id === userId);
 };
+
+// Mock 文件夹（从 mockFileTree 提取）
+export const mockFolders: Folder[] = [
+  { id: 'folder_001', projectId: 'proj_001', parentId: null, name: '需求调研', order: 1, createdAt: '2024-12-01T10:00:00Z', updatedAt: '2024-12-01T10:00:00Z' },
+  { id: 'folder_002', projectId: 'proj_001', parentId: null, name: '技术方案', order: 2, createdAt: '2024-12-01T10:00:00Z', updatedAt: '2024-12-01T10:00:00Z' },
+  { id: 'folder_003', projectId: 'proj_001', parentId: null, name: '投标文件', order: 3, createdAt: '2024-12-01T10:00:00Z', updatedAt: '2024-12-01T10:00:00Z' },
+  { id: 'folder_004', projectId: 'proj_001', parentId: 'folder_002', name: '系统设计', order: 1, createdAt: '2024-12-01T10:00:00Z', updatedAt: '2024-12-01T10:00:00Z' },
+  { id: 'folder_005', projectId: 'proj_001', parentId: 'folder_002', name: '接口设计', order: 2, createdAt: '2024-12-01T10:00:00Z', updatedAt: '2024-12-01T10:00:00Z' },
+  { id: 'folder_006', projectId: 'proj_001', parentId: 'folder_002', name: '安全方案', order: 3, createdAt: '2024-12-01T10:00:00Z', updatedAt: '2024-12-01T10:00:00Z' },
+  { id: 'folder_007', projectId: 'proj_001', parentId: null, name: '参考资料', order: 4, createdAt: '2024-12-01T10:00:00Z', updatedAt: '2024-12-01T10:00:00Z' },
+];

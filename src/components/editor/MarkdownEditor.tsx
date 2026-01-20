@@ -10,7 +10,7 @@ interface MarkdownEditorProps {
   placeholder?: string;
   onChange: (content: string) => void;
   onSelectionChange?: (selection: { text: string; start: number; end: number } | null) => void;
-  onAIAction?: (action: string, text: string) => void;
+  onAIAction?: (action: string, text: string, customQuestion?: string) => void;
   onScroll?: (e: React.UIEvent<HTMLTextAreaElement>) => void;
 }
 
@@ -129,8 +129,9 @@ export const MarkdownEditor = React.forwardRef<HTMLTextAreaElement, MarkdownEdit
       <FloatingAIMenu
         isOpen={menuOpen}
         position={menuPos}
-        onAction={(action) => {
-          onAIAction?.(action, selectedText);
+        selectedText={selectedText}
+        onAction={(action, customQuestion) => {
+          onAIAction?.(action, selectedText, customQuestion);
           setMenuOpen(false);
         }}
         onClose={() => setMenuOpen(false)}

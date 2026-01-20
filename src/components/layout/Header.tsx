@@ -1,20 +1,19 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import {
   Search,
   Bell,
   ChevronDown,
-  Settings,
   LogOut,
   User as UserIcon,
   Users,
-  Command,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Project, User, Notification } from '@/types';
+import { Project, User, Notification, Document, Folder } from '@/types';
 import { cn } from '@/lib/utils';
+import { SearchDialog } from '@/components/modals/SearchDialog';
 
 interface HeaderProps {
   currentProject: Project | null;
@@ -22,8 +21,14 @@ interface HeaderProps {
   user: User;
   notifications: Notification[];
   unreadCount: number;
+  documents?: Document[];
+  projects?: Project[];
+  folders?: Folder[];
   onProjectChange?: (projectId: string) => void;
-  onSearch?: (query: string) => void;
+  onSelectDocument?: (docId: string) => void;
+  onSelectProject?: (projectId: string) => void;
+  isSearchOpen?: boolean;
+  onSearchOpenChange?: (open: boolean) => void;
 }
 
 export function Header({
@@ -31,12 +36,30 @@ export function Header({
   user,
   notifications,
   unreadCount,
+  documents = [],
+  projects = [],
+  folders = [],
+  onSelectDocument,
+  onSelectProject,
+  isSearchOpen: externalIsSearchOpen,
+  onSearchOpenChange,
 }: HeaderProps) {
   const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = React.useState(false);
+  const [internalIsSearchOpen, setInternalIsSearchOpen] = React.useState(false);
+
+  // 支持受控和非受控模式
+  const isSearchOpen = externalIsSearchOpen !== undefined ? externalIsSearchOpen : internalIsSearchOpen;
+  const setIsSearchOpen = (open: boolean) => {
+    if (onSearchOpenChange) {
+      onSearchOpenChange(open);
+    } else {
+      setInternalIsSearchOpen(open);
+    }
+  };
 
   // Close menus when clicking outside
-  React.useEffect(() => {
+  useEffect(() => {
     const handleClick = () => {
       setIsUserMenuOpen(false);
       setIsNotificationsOpen(false);
@@ -53,8 +76,8 @@ export function Header({
       <div className="flex items-center gap-3">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-zinc-900 rounded-lg flex items-center justify-center">
-            <span className="text-white font-semibold text-xs">PN</span>
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center overflow-hidden bg-white">
+            <img src={`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/favicon.ico`} alt="Logo" className="w-full h-full object-contain" />
           </div>
           <span className="font-semibold text-zinc-900 text-sm hidden sm:block">售前协作平台</span>
         </Link>
@@ -83,17 +106,19 @@ export function Header({
       {/* Right section */}
       <div className="flex items-center gap-1">
         {/* Search */}
-        <button className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 rounded-md transition-colors">
+        <button
+          className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 rounded-md transition-colors"
+          onClick={() => setIsSearchOpen(true)}
+        >
           <Search className="w-3.5 h-3.5 text-zinc-400" />
-          <span className="text-[13px] text-zinc-500">搜索...</span>
-          <div className="flex items-center gap-0.5 ml-4">
-            <kbd className="px-1.5 py-0.5 bg-white rounded text-[10px] text-zinc-400 border border-zinc-200">
-              <Command className="w-2.5 h-2.5 inline" />
-            </kbd>
-            <kbd className="px-1.5 py-0.5 bg-white rounded text-[10px] text-zinc-400 border border-zinc-200">K</kbd>
-          </div>
+          <span className="text-[13px] text-zinc-500">搜索文档...</span>
         </button>
-        <Button variant="ghost" size="icon" className="md:hidden h-8 w-8">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden h-8 w-8"
+          onClick={() => setIsSearchOpen(true)}
+        >
           <Search className="w-4 h-4 text-zinc-500" />
         </Button>
 
@@ -212,6 +237,17 @@ export function Header({
           )}
         </div>
       </div>
+
+      {/* Search Dialog */}
+      <SearchDialog
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        documents={documents}
+        projects={projects}
+        folders={folders}
+        onSelectDocument={onSelectDocument}
+        onSelectProject={onSelectProject}
+      />
     </header>
   );
 }
