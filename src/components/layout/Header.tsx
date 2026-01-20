@@ -11,6 +11,7 @@ import {
   Users,
   CheckSquare,
   FileCheck,
+  FolderKanban,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Project, User, Notification, Document, Folder } from '@/types';
@@ -33,6 +34,8 @@ interface HeaderProps {
   onSelectProject?: (projectId: string) => void;
   onOpenTaskBoard?: () => void;
   onOpenReviewCenter?: () => void;
+  onOpenProjectManagement?: () => void;
+  onOpenUserManagement?: () => void;
   isSearchOpen?: boolean;
   onSearchOpenChange?: (open: boolean) => void;
 }
@@ -51,6 +54,8 @@ export function Header({
   onSelectProject,
   onOpenTaskBoard,
   onOpenReviewCenter,
+  onOpenProjectManagement,
+  onOpenUserManagement,
   isSearchOpen: externalIsSearchOpen,
   onSearchOpenChange,
 }: HeaderProps) {
@@ -171,6 +176,30 @@ export function Header({
           </Button>
         </div>
 
+        {/* Project Management */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={onOpenProjectManagement}
+          title="项目管理"
+        >
+          <FolderKanban className="w-4 h-4 text-zinc-500" />
+        </Button>
+
+        {/* User Management - Only for managers */}
+        {user.role === 'manager' && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={onOpenUserManagement}
+            title="用户管理"
+          >
+            <Users className="w-4 h-4 text-zinc-500" />
+          </Button>
+        )}
+
         {/* Notifications */}
         <div className="relative">
           <Button
@@ -272,10 +301,6 @@ export function Header({
                   <UserIcon className="w-4 h-4 text-zinc-400" />
                   个人资料
                 </button>
-                <Link href="/admin/users" className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-zinc-700 hover:bg-zinc-100 rounded-md transition-colors">
-                  <Users className="w-4 h-4 text-zinc-400" />
-                  用户管理
-                </Link>
                 <div className="my-1 border-t border-zinc-100" />
                 <button className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-red-600 hover:bg-red-50 rounded-md transition-colors">
                   <LogOut className="w-4 h-4" />

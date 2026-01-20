@@ -44,6 +44,7 @@ interface SidebarProps {
   onCopyNode?: (node: FileTreeNode) => void;
   onAssignTask?: (node: FileTreeNode) => void;
   onOpenSearch?: () => void;
+  onOpenProjectManagement?: () => void;
 }
 
 export function Sidebar({
@@ -66,6 +67,7 @@ export function Sidebar({
   onCopyNode,
   onAssignTask,
   onOpenSearch,
+  onOpenProjectManagement,
 }: SidebarProps) {
   const [isRecentExpanded, setIsRecentExpanded] = React.useState(false);
   const [isMembersExpanded, setIsMembersExpanded] = React.useState(false);
@@ -179,13 +181,13 @@ export function Sidebar({
                 </div>
 
                 <div className="p-2 border-t border-zinc-100">
-                  <Link
-                    href="/projects"
+                  <button
+                    onClick={onOpenProjectManagement}
                     className="flex items-center justify-center gap-1.5 w-full px-3 py-2 text-sm text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 rounded-md transition-colors"
                   >
                     <FolderKanban className="w-4 h-4" />
                     查看全部项目
-                  </Link>
+                  </button>
                 </div>
               </div>
             )}

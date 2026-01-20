@@ -53,6 +53,8 @@ import AssignTaskDialog from '@/components/tasks/AssignTaskDialog';
 import { ReviewCenter } from '@/components/review/ReviewCenter';
 import { SubmitReviewModal } from '@/components/review/SubmitReviewModal';
 import { ReviewDetailModal } from '@/components/review/ReviewDetailModal';
+import { ProjectManagement } from '@/components/management/ProjectManagement';
+import { UserManagement } from '@/components/management/UserManagement';
 
 export default function Home() {
   // Project state
@@ -489,6 +491,18 @@ export default function Home() {
   const handleTabSelect = (tabId: string) => {
     setActiveTabId(tabId);
     const tab = tabs.find(t => t.id === tabId);
+    
+    // 如果切换到管理类标签页，收起 AI 助手
+    if (tab && (
+      tab.type === 'task_board' || 
+      tab.type === 'manager_task_board' || 
+      tab.type === 'review_center' ||
+      tab.type === 'project_management' ||
+      tab.type === 'user_management'
+    )) {
+      setIsAIPanelOpen(false);
+    }
+    
     if (tab && tab.documentId) {
       const doc = getDocumentById(tab.documentId);
       if (doc) {
@@ -677,6 +691,9 @@ export default function Home() {
 
   // Task handlers
   const handleOpenTaskBoard = () => {
+    // 收起 AI 助手面板
+    setIsAIPanelOpen(false);
+    
     // 根据用户角色决定打开哪个看板
     if (currentUser.role === 'manager' || currentUser.role === 'supervisor') {
       // 管理层打开团队任务看板
@@ -713,6 +730,9 @@ export default function Home() {
 
   // Review handlers
   const handleOpenReviewCenter = () => {
+    // 收起 AI 助手面板
+    setIsAIPanelOpen(false);
+    
     const existingTab = tabs.find(t => t.type === 'review_center');
     if (existingTab) {
       setActiveTabId(existingTab.id);
@@ -721,6 +741,46 @@ export default function Home() {
         id: `tab_review_${generateId()}`,
         title: '审核中心',
         type: 'review_center',
+        isModified: false,
+      };
+      setTabs([...tabs, newTab]);
+      setActiveTabId(newTab.id);
+    }
+  };
+
+  // Project Management handlers
+  const handleOpenProjectManagement = () => {
+    // 收起 AI 助手面板
+    setIsAIPanelOpen(false);
+    
+    const existingTab = tabs.find(t => t.type === 'project_management');
+    if (existingTab) {
+      setActiveTabId(existingTab.id);
+    } else {
+      const newTab: EditorTab = {
+        id: `tab_project_mgmt_${generateId()}`,
+        title: '项目管理',
+        type: 'project_management',
+        isModified: false,
+      };
+      setTabs([...tabs, newTab]);
+      setActiveTabId(newTab.id);
+    }
+  };
+
+  // User Management handlers
+  const handleOpenUserManagement = () => {
+    // 收起 AI 助手面板
+    setIsAIPanelOpen(false);
+    
+    const existingTab = tabs.find(t => t.type === 'user_management');
+    if (existingTab) {
+      setActiveTabId(existingTab.id);
+    } else {
+      const newTab: EditorTab = {
+        id: `tab_user_mgmt_${generateId()}`,
+        title: '用户管理',
+        type: 'user_management',
         isModified: false,
       };
       setTabs([...tabs, newTab]);
@@ -1116,6 +1176,8 @@ export default function Home() {
         }}
         onOpenTaskBoard={handleOpenTaskBoard}
         onOpenReviewCenter={handleOpenReviewCenter}
+        onOpenProjectManagement={handleOpenProjectManagement}
+        onOpenUserManagement={handleOpenUserManagement}
         isSearchOpen={isSearchOpen}
         onSearchOpenChange={setIsSearchOpen}
       />
@@ -1144,6 +1206,7 @@ export default function Home() {
             onCopyNode={handleCopyNode}
             onAssignTask={handleAssignTask}
             onOpenSearch={() => setIsSearchOpen(true)}
+            onOpenProjectManagement={handleOpenProjectManagement}
           />
         ) : (
           <ResizablePanel
@@ -1174,6 +1237,7 @@ export default function Home() {
               onCopyNode={handleCopyNode}
               onAssignTask={handleAssignTask}
               onOpenSearch={() => setIsSearchOpen(true)}
+              onOpenProjectManagement={handleOpenProjectManagement}
             />
           </ResizablePanel>
         )}
@@ -1215,6 +1279,12 @@ export default function Home() {
                   onOpenDetail={handleOpenReviewDetail}
                   onOpenDocument={(documentId) => openDocumentById(documentId)}
                 />
+              ) : tabs.find(t => t.id === activeTabId)?.type === 'project_management' ? (
+                // 项目管理
+                <ProjectManagement />
+              ) : tabs.find(t => t.id === activeTabId)?.type === 'user_management' ? (
+                // 用户管理
+                <UserManagement />
               ) : (
                 <>
                   <EditorToolbar

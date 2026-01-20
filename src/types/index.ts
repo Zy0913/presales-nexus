@@ -109,8 +109,8 @@ export type EditorViewMode = 'edit' | 'preview' | 'split';
 // 编辑器标签页
 export interface EditorTab {
   id: string;
-  type?: 'document' | 'task_board' | 'manager_task_board' | 'review_center';
-  documentId?: string; // Optional for task_board, manager_task_board, and review_center
+  type?: 'document' | 'task_board' | 'manager_task_board' | 'review_center' | 'project_management' | 'user_management';
+  documentId?: string; // Optional for task_board, manager_task_board, review_center, project_management, and user_management
   title: string;
   isModified: boolean;
 }

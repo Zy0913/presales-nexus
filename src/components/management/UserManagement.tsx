@@ -2,19 +2,13 @@
 
 import React, { useState } from 'react';
 import {
-  Users,
   Search,
   Plus,
-  MoreHorizontal,
-  Shield,
-  ShieldAlert,
-  User as UserIcon,
   Trash2,
-  Edit2
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { useMockData } from '@/hooks/use-mock-data';
 import { UserRole } from '@/types';
 import {
@@ -24,15 +18,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast, ToastContainer } from '@/components/ui/toast';
-import { Header } from '@/components/layout/Header';
-import { currentUser, mockNotifications } from '@/lib/mock-data';
+import { useToast } from '@/components/ui/toast';
 
-export default function UserManagementPage() {
+export function UserManagement() {
   const { users, addUser, updateUser, deleteUser } = useMockData();
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const { toasts, showToast } = useToast();
+  const { showToast } = useToast();
 
   // Filter users
   const filteredUsers = users.filter(user =>
@@ -49,47 +41,37 @@ export default function UserManagementPage() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-white overflow-hidden">
-      <Header
-        currentProject={null}
-        currentPath={['系统管理', '用户管理']}
-        user={currentUser}
-        notifications={mockNotifications}
-        unreadCount={mockNotifications.filter(n => !n.isRead).length}
-      />
-
-      <div className="flex-1 flex flex-col min-h-0 bg-white">
-        <ToastContainer toasts={toasts} />
+    <div className="h-full flex flex-col bg-zinc-50 overflow-hidden">
+      <div className="flex-1 flex flex-col bg-white rounded-xl border border-zinc-200 m-4 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-8 py-6 border-b border-zinc-100 flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 flex-shrink-0">
           <div>
-            <h1 className="text-2xl font-semibold text-zinc-900">用户管理</h1>
-            <p className="text-sm text-zinc-500 mt-1">管理企业所有成员及其系统权限</p>
+            <h2 className="text-lg font-semibold text-zinc-900">用户管理</h2>
+            <p className="text-sm text-zinc-500 mt-0.5">管理企业所有成员及其系统权限</p>
           </div>
-          <Button onClick={() => setIsAddModalOpen(true)} className="gap-2">
+          <Button onClick={() => setIsAddModalOpen(true)} size="sm" className="gap-2">
             <Plus className="w-4 h-4" />
             添加用户
           </Button>
         </div>
 
         {/* Filters */}
-        <div className="px-8 py-4 flex items-center gap-4 bg-zinc-50/50 border-b border-zinc-100 flex-shrink-0">
+        <div className="px-6 py-3 flex items-center gap-4 bg-zinc-50/50 border-b border-zinc-100 flex-shrink-0">
           <div className="relative w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
             <Input
               placeholder="搜索姓名、邮箱或部门..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 bg-white"
+              className="pl-9 bg-white h-9"
             />
           </div>
         </div>
 
         {/* Users List */}
-        <div className="flex-1 overflow-auto px-8 py-4">
-          <div className="border border-zinc-200 rounded-lg overflow-hidden">
-            <table className="w-full text-left text-sm">
-            <thead className="bg-zinc-50 border-b border-zinc-200">
+        <div className="flex-1 overflow-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="sticky top-0 bg-zinc-50 border-b border-zinc-200 z-10">
               <tr>
                 <th className="px-6 py-3 font-medium text-zinc-500">成员信息</th>
                 <th className="px-6 py-3 font-medium text-zinc-500">角色</th>
@@ -140,7 +122,7 @@ export default function UserManagementPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-zinc-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="h-8 w-8 text-zinc-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={() => handleDelete(user.id)}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -158,7 +140,6 @@ export default function UserManagementPage() {
             </tbody>
           </table>
         </div>
-        </div>
       </div>
 
       {/* Add User Modal */}
@@ -166,7 +147,12 @@ export default function UserManagementPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/50" onClick={() => setIsAddModalOpen(false)} />
           <div className="relative bg-white rounded-xl shadow-xl w-[480px] p-6 animate-in fade-in zoom-in-95 duration-200">
-            <h2 className="text-lg font-semibold mb-6">添加新用户</h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold">添加新用户</h2>
+              <button onClick={() => setIsAddModalOpen(false)} className="text-zinc-400 hover:text-zinc-600 p-1 hover:bg-zinc-100 rounded transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
             <form onSubmit={(e) => {
               e.preventDefault();
               const formData = new FormData(e.currentTarget);
