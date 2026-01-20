@@ -172,17 +172,14 @@ export default function Home() {
     return reviewRecords.filter(r => {
       if (r.finalStatus !== 'pending') return false;
 
+      // 主管只能看到分配给自己且待审核的记录
       if (currentUser.role === 'supervisor' && r.currentStage === 'supervisor_review') {
-        return r.supervisor?.decision === 'pending';
+        return r.supervisor?.id === currentUser.id && r.supervisor?.decision === 'pending';
       }
 
-      if (currentUser.role === 'manager') {
-        if (r.currentStage === 'manager_review') {
-          return r.manager?.decision === 'pending';
-        }
-        if (r.currentStage === 'supervisor_review') {
-          return r.supervisor?.decision === 'pending';
-        }
+      // 经理只能看到已经流转到经理审核阶段的记录
+      if (currentUser.role === 'manager' && r.currentStage === 'manager_review') {
+        return r.manager?.id === currentUser.id && r.manager?.decision === 'pending';
       }
 
       return false;

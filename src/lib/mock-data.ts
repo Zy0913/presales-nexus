@@ -2606,18 +2606,14 @@ export const getPendingReviewsForUser = (userId: string, userRole: string): Revi
   return mockReviewRecords.filter(r => {
     if (r.finalStatus !== 'pending') return false;
 
+    // 主管只能看到分配给自己且待审核的记录
     if (userRole === 'supervisor' && r.currentStage === 'supervisor_review') {
       return r.supervisor?.id === userId && r.supervisor?.decision === 'pending';
     }
 
-    if (userRole === 'manager') {
-      if (r.currentStage === 'manager_review') {
-        return r.manager?.id === userId && r.manager?.decision === 'pending';
-      }
-      // 经理也可以看到主管审核的记录
-      if (r.currentStage === 'supervisor_review') {
-        return true;
-      }
+    // 经理只能看到已经流转到经理审核阶段的记录
+    if (userRole === 'manager' && r.currentStage === 'manager_review') {
+      return r.manager?.id === userId && r.manager?.decision === 'pending';
     }
 
     return false;
