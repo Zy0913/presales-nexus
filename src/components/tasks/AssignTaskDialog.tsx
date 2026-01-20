@@ -209,8 +209,8 @@ export default function AssignTaskDialog({
               </label>
               <div className="relative">
                 <DatePicker
-                  date={dueDate}
-                  setDate={setDueDate}
+                  value={dueDate ? dueDate.toISOString().split('T')[0] : undefined}
+                  onChange={(dateStr) => setDueDate(new Date(dateStr))}
                   className="w-full"
                 />
               </div>
@@ -235,7 +235,7 @@ export default function AssignTaskDialog({
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-zinc-100 bg-zinc-50/50">
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             onClick={handleClose}
             className="text-zinc-600 border-zinc-200 hover:bg-zinc-100 h-9"
           >

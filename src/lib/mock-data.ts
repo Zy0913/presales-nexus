@@ -1,4 +1,4 @@
-import { User, Project, ProjectMember, Document, FileTreeNode, ChatSession, Notification, Folder, Task } from '@/types';
+import { User, Project, ProjectMember, Document, FileTreeNode, ChatSession, Notification, Folder, Task, ReviewRecord } from '@/types';
 
 // Mock 用户
 export const mockUsers: User[] = [
@@ -2357,3 +2357,273 @@ export const mockTasks: Task[] = [
     updatedAt: '2025-01-19T14:00:00Z',
   },
 ];
+
+// Mock 审核记录
+export const mockReviewRecords: ReviewRecord[] = [
+  {
+    id: 'review_001',
+    documentId: 'doc_002',
+    documentTitle: '技术方案功能清单 v3.0',
+    projectId: 'proj_001',
+    projectName: '深圳湾口岸智慧通关系统',
+    submitterId: 'user_003',
+    submitterName: '王文渊',
+    submittedAt: '2025-01-19T14:30:00Z',
+    submitComment: '功能清单已完成，请领导审阅',
+    currentStage: 'supervisor_review',
+    supervisor: {
+      id: 'user_002',
+      name: '李朋飞',
+      decision: 'pending',
+    },
+    aiCheck: {
+      score: 92,
+      checkedAt: '2025-01-19T14:30:05Z',
+      summary: '文档整体质量良好，格式规范，有2处建议优化',
+      issues: [
+        {
+          id: 'issue_001',
+          type: 'completeness',
+          severity: 'suggestion',
+          title: '建议补充移动端功能说明',
+          description: '移动应用模块的功能描述较为简略，建议增加详细的功能点说明',
+          location: '第五章 移动应用',
+          suggestion: '可参考同类项目的移动端功能清单进行补充',
+        },
+        {
+          id: 'issue_002',
+          type: 'consistency',
+          severity: 'warning',
+          title: '版本号与更新日期不一致',
+          description: '文档标题显示v3.0，但更新日期早于v2.0的发布日期',
+          location: '版本信息',
+          suggestion: '请核实版本号和更新日期的对应关系',
+        },
+      ],
+    },
+    finalStatus: 'pending',
+    createdAt: '2025-01-19T14:30:00Z',
+    updatedAt: '2025-01-19T14:30:05Z',
+  },
+  {
+    id: 'review_002',
+    documentId: 'doc_003',
+    documentTitle: '系统架构设计方案',
+    projectId: 'proj_001',
+    projectName: '深圳湾口岸智慧通关系统',
+    submitterId: 'user_003',
+    submitterName: '王文渊',
+    submittedAt: '2025-01-18T16:00:00Z',
+    submitComment: '架构设计初稿完成，请审核',
+    currentStage: 'manager_review',
+    supervisor: {
+      id: 'user_002',
+      name: '李朋飞',
+      decision: 'approved',
+      comment: '架构设计合理，技术选型恰当，同意提交终审',
+      reviewedAt: '2025-01-19T09:30:00Z',
+    },
+    manager: {
+      id: 'user_001',
+      name: '张明远',
+      decision: 'pending',
+    },
+    aiCheck: {
+      score: 88,
+      checkedAt: '2025-01-18T16:00:08Z',
+      summary: '架构设计完整，有3处需要关注的问题',
+      issues: [
+        {
+          id: 'issue_003',
+          type: 'security',
+          severity: 'warning',
+          title: '建议补充API鉴权说明',
+          description: 'API网关层的鉴权机制描述不够详细',
+          location: '第二章 技术选型 - API网关',
+          suggestion: '建议补充OAuth2.0或JWT的具体实现方案',
+        },
+        {
+          id: 'issue_004',
+          type: 'completeness',
+          severity: 'suggestion',
+          title: '容灾方案可进一步完善',
+          description: '当前容灾方案只描述了数据库层面，建议补充应用层容灾',
+          location: '第七章 容灾设计',
+        },
+        {
+          id: 'issue_005',
+          type: 'format',
+          severity: 'suggestion',
+          title: '架构图建议使用标准符号',
+          description: '部分架构图使用了非标准符号，建议统一使用UML或C4模型',
+          location: '第三章 系统架构图',
+        },
+      ],
+    },
+    finalStatus: 'pending',
+    createdAt: '2025-01-18T16:00:00Z',
+    updatedAt: '2025-01-19T09:30:00Z',
+  },
+  {
+    id: 'review_003',
+    documentId: 'doc_011',
+    documentTitle: '等保2.0三级建设方案',
+    projectId: 'proj_001',
+    projectName: '深圳湾口岸智慧通关系统',
+    submitterId: 'user_003',
+    submitterName: '王文渊',
+    submittedAt: '2025-01-17T10:00:00Z',
+    submitComment: '等保方案初稿，请审核',
+    currentStage: 'supervisor_review',
+    supervisor: {
+      id: 'user_002',
+      name: '李朋飞',
+      decision: 'rejected',
+      comment: '物理安全部分描述不够详细，请补充机房建设标准和门禁系统要求后重新提交',
+      reviewedAt: '2025-01-17T15:20:00Z',
+    },
+    aiCheck: {
+      score: 75,
+      checkedAt: '2025-01-17T10:00:12Z',
+      summary: '文档存在较多需要完善的内容',
+      issues: [
+        {
+          id: 'issue_006',
+          type: 'completeness',
+          severity: 'error',
+          title: '物理安全章节内容缺失',
+          description: '等保三级要求的物理安全控制点未完整覆盖',
+          location: '第三章 物理安全',
+          suggestion: '请参照GB/T 22239-2019补充物理安全相关内容',
+        },
+        {
+          id: 'issue_007',
+          type: 'content',
+          severity: 'warning',
+          title: '安全审计要求不完整',
+          description: '日志保留期限未明确说明，等保要求至少保留6个月',
+          location: '第五章 安全审计',
+        },
+      ],
+    },
+    finalStatus: 'rejected',
+    createdAt: '2025-01-17T10:00:00Z',
+    updatedAt: '2025-01-17T15:20:00Z',
+  },
+  {
+    id: 'review_004',
+    documentId: 'doc_001',
+    documentTitle: '深圳湾口岸需求调研报告',
+    projectId: 'proj_001',
+    projectName: '深圳湾口岸智慧通关系统',
+    submitterId: 'user_003',
+    submitterName: '王文渊',
+    submittedAt: '2025-01-05T09:00:00Z',
+    submitComment: '需求调研报告完成，请审核',
+    currentStage: 'manager_review',
+    supervisor: {
+      id: 'user_002',
+      name: '李朋飞',
+      decision: 'approved',
+      comment: '调研内容详实，需求分析到位',
+      reviewedAt: '2025-01-05T14:00:00Z',
+    },
+    manager: {
+      id: 'user_001',
+      name: '张明远',
+      decision: 'approved',
+      comment: '同意发布，可作为后续方案设计的依据',
+      reviewedAt: '2025-01-06T10:30:00Z',
+    },
+    aiCheck: {
+      score: 95,
+      checkedAt: '2025-01-05T09:00:06Z',
+      summary: '文档质量优秀，结构清晰，内容完整',
+      issues: [],
+    },
+    finalStatus: 'approved',
+    createdAt: '2025-01-05T09:00:00Z',
+    updatedAt: '2025-01-06T10:30:00Z',
+    completedAt: '2025-01-06T10:30:00Z',
+  },
+  {
+    id: 'review_005',
+    documentId: 'doc_004',
+    documentTitle: 'API 接口设计文档',
+    projectId: 'proj_001',
+    projectName: '深圳湾口岸智慧通关系统',
+    submitterId: 'user_004',
+    submitterName: '陈雨婷',
+    submittedAt: '2025-01-08T11:00:00Z',
+    submitComment: 'API接口设计完成，请审核',
+    currentStage: 'manager_review',
+    supervisor: {
+      id: 'user_002',
+      name: '李朋飞',
+      decision: 'approved',
+      comment: '接口设计规范，符合RESTful标准',
+      reviewedAt: '2025-01-08T16:00:00Z',
+    },
+    manager: {
+      id: 'user_001',
+      name: '张明远',
+      decision: 'approved',
+      comment: '通过',
+      reviewedAt: '2025-01-09T09:30:00Z',
+    },
+    aiCheck: {
+      score: 90,
+      checkedAt: '2025-01-08T11:00:05Z',
+      summary: '接口设计规范，建议补充错误码说明',
+      issues: [
+        {
+          id: 'issue_008',
+          type: 'completeness',
+          severity: 'suggestion',
+          title: '建议补充更多错误码定义',
+          description: '当前错误码定义约20个，建议按模块细化错误码',
+          location: '1.5 错误码规范',
+        },
+      ],
+    },
+    finalStatus: 'approved',
+    createdAt: '2025-01-08T11:00:00Z',
+    updatedAt: '2025-01-09T09:30:00Z',
+    completedAt: '2025-01-09T09:30:00Z',
+  },
+];
+
+// 获取审核记录的便捷方法
+export const getReviewRecordById = (reviewId: string): ReviewRecord | undefined => {
+  return mockReviewRecords.find(r => r.id === reviewId);
+};
+
+export const getReviewRecordsByDocumentId = (documentId: string): ReviewRecord[] => {
+  return mockReviewRecords.filter(r => r.documentId === documentId);
+};
+
+export const getPendingReviewsForUser = (userId: string, userRole: string): ReviewRecord[] => {
+  return mockReviewRecords.filter(r => {
+    if (r.finalStatus !== 'pending') return false;
+
+    if (userRole === 'supervisor' && r.currentStage === 'supervisor_review') {
+      return r.supervisor?.id === userId && r.supervisor?.decision === 'pending';
+    }
+
+    if (userRole === 'manager') {
+      if (r.currentStage === 'manager_review') {
+        return r.manager?.id === userId && r.manager?.decision === 'pending';
+      }
+      // 经理也可以看到主管审核的记录
+      if (r.currentStage === 'supervisor_review') {
+        return true;
+      }
+    }
+
+    return false;
+  });
+};
+
+export const getSubmittedReviewsByUser = (userId: string): ReviewRecord[] => {
+  return mockReviewRecords.filter(r => r.submitterId === userId);
+};

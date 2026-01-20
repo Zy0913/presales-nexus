@@ -10,6 +10,7 @@ import {
   User as UserIcon,
   Users,
   CheckSquare,
+  FileCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Project, User, Notification, Document, Folder } from '@/types';
@@ -23,6 +24,7 @@ interface HeaderProps {
   notifications: Notification[];
   unreadCount: number;
   unfinishedTaskCount?: number;
+  pendingReviewCount?: number;
   documents?: Document[];
   projects?: Project[];
   folders?: Folder[];
@@ -30,6 +32,7 @@ interface HeaderProps {
   onSelectDocument?: (docId: string) => void;
   onSelectProject?: (projectId: string) => void;
   onOpenTaskBoard?: () => void;
+  onOpenReviewCenter?: () => void;
   isSearchOpen?: boolean;
   onSearchOpenChange?: (open: boolean) => void;
 }
@@ -40,12 +43,14 @@ export function Header({
   notifications,
   unreadCount,
   unfinishedTaskCount = 0,
+  pendingReviewCount = 0,
   documents = [],
   projects = [],
   folders = [],
   onSelectDocument,
   onSelectProject,
   onOpenTaskBoard,
+  onOpenReviewCenter,
   isSearchOpen: externalIsSearchOpen,
   onSearchOpenChange,
 }: HeaderProps) {
@@ -143,6 +148,24 @@ export function Header({
             {unfinishedTaskCount > 0 && (
               <span className="absolute top-1 right-1 w-4 h-4 bg-blue-600 text-white text-[10px] rounded-full flex items-center justify-center font-medium">
                 {unfinishedTaskCount > 9 ? '9+' : unfinishedTaskCount}
+              </span>
+            )}
+          </Button>
+        </div>
+
+        {/* Review Center */}
+        <div className="relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={onOpenReviewCenter}
+            title="审核中心"
+          >
+            <FileCheck className="w-4 h-4 text-zinc-500" />
+            {pendingReviewCount > 0 && (
+              <span className="absolute top-1 right-1 w-4 h-4 bg-amber-500 text-white text-[10px] rounded-full flex items-center justify-center font-medium">
+                {pendingReviewCount > 9 ? '9+' : pendingReviewCount}
               </span>
             )}
           </Button>

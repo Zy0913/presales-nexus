@@ -241,7 +241,7 @@ const TaskRow: React.FC<{
                 {/* 左侧：查看文档 */}
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="secondary"
                   onClick={(e) => { e.stopPropagation(); onOpenDocument(task.documentId, task.documentName); }}
                   className="h-8 text-xs bg-white hover:bg-zinc-50 border-zinc-200 text-zinc-700"
                 >
@@ -362,7 +362,7 @@ export default function TaskBoard({
         <div className="flex items-center gap-6">
           <h1 className="text-lg font-semibold text-zinc-900 flex items-center gap-2">
             我的任务
-            <Badge variant="secondary" className="bg-zinc-100 text-zinc-600 font-normal rounded-full px-2">
+            <Badge variant="default" className="bg-zinc-100 text-zinc-600 font-normal rounded-full px-2">
               {stats.total}
             </Badge>
           </h1>

@@ -109,8 +109,8 @@ export type EditorViewMode = 'edit' | 'preview' | 'split';
 // 编辑器标签页
 export interface EditorTab {
   id: string;
-  type?: 'document' | 'task_board' | 'manager_task_board';
-  documentId?: string; // Optional for task_board and manager_task_board
+  type?: 'document' | 'task_board' | 'manager_task_board' | 'review_center';
+  documentId?: string; // Optional for task_board, manager_task_board, and review_center
   title: string;
   isModified: boolean;
 }
@@ -248,4 +248,77 @@ export interface Tab {
   isActive: boolean;
   isDirty?: boolean;
   canClose: boolean;
+}
+
+// ==================== 审核相关类型 ====================
+
+// 审核环节
+export type ReviewStage = 'ai_check' | 'supervisor_review' | 'manager_review';
+
+// 审核结果
+export type ReviewDecision = 'pending' | 'approved' | 'rejected' | 'transferred';
+
+// AI 检查问题
+export interface AICheckIssue {
+  id: string;
+  type: 'format' | 'content' | 'completeness' | 'consistency' | 'security';
+  severity: 'error' | 'warning' | 'suggestion';
+  title: string;
+  description: string;
+  location?: string;
+  suggestion?: string;
+}
+
+// AI 检查结果
+export interface AICheckResult {
+  score: number;
+  checkedAt: string;
+  issues: AICheckIssue[];
+  summary: string;
+}
+
+// 审核人信息
+export interface ReviewerInfo {
+  id: string;
+  name: string;
+  decision: ReviewDecision;
+  comment?: string;
+  reviewedAt?: string;
+}
+
+// 审核记录
+export interface ReviewRecord {
+  id: string;
+
+  // 关联信息
+  documentId: string;
+  documentTitle: string;
+  projectId: string;
+  projectName: string;
+
+  // 提交信息
+  submitterId: string;
+  submitterName: string;
+  submittedAt: string;
+  submitComment?: string;
+
+  // 当前流程状态
+  currentStage: ReviewStage;
+
+  // 主管审核
+  supervisor?: ReviewerInfo;
+
+  // 经理审核
+  manager?: ReviewerInfo;
+
+  // AI 预检结果
+  aiCheck?: AICheckResult;
+
+  // 最终状态
+  finalStatus: 'pending' | 'approved' | 'rejected' | 'published';
+
+  // 元信息
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
 }

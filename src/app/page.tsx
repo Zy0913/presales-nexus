@@ -27,6 +27,7 @@ import {
   mockFolders,
   getDocumentById,
   mockTasks,
+  mockReviewRecords,
 } from '@/lib/mock-data';
 import { countWords, generateId } from '@/lib/utils';
 import {
@@ -43,11 +44,15 @@ import {
   TaskStatus,
   Tab,
   TabType,
+  ReviewRecord,
 } from '@/types';
 import { FileText, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import TaskBoard from '@/components/tasks/TaskBoard';
 import ManagerTaskBoard from '@/components/tasks/ManagerTaskBoard';
 import AssignTaskDialog from '@/components/tasks/AssignTaskDialog';
+import { ReviewCenter } from '@/components/review/ReviewCenter';
+import { SubmitReviewModal } from '@/components/review/SubmitReviewModal';
+import { ReviewDetailModal } from '@/components/review/ReviewDetailModal';
 
 export default function Home() {
   // Project state
@@ -116,6 +121,13 @@ export default function Home() {
   const [documentToAssign, setDocumentToAssign] = React.useState<Document | null>(null);
   const [documentPathToAssign, setDocumentPathToAssign] = React.useState<string>('');
 
+  // Review state
+  const [reviewRecords, setReviewRecords] = React.useState<ReviewRecord[]>(mockReviewRecords);
+  const [isSubmitReviewModalOpen, setIsSubmitReviewModalOpen] = React.useState(false);
+  const [documentToReview, setDocumentToReview] = React.useState<Document | null>(null);
+  const [selectedReviewRecord, setSelectedReviewRecord] = React.useState<ReviewRecord | null>(null);
+  const [isReviewDetailModalOpen, setIsReviewDetailModalOpen] = React.useState(false);
+
   // Toast
   const { toasts, showToast } = useToast();
 
@@ -133,7 +145,7 @@ export default function Home() {
   // Derived state
   const currentDocument = React.useMemo(() => {
     const activeTab = tabs.find(t => t.id === activeTabId);
-    if (!activeTab) return null;
+    if (!activeTab || !activeTab.documentId) return null;
     return getDocumentById(activeTab.documentId) || null;
   }, [activeTabId, tabs]);
 
@@ -154,6 +166,28 @@ export default function Home() {
       (task) => task.assigneeId === currentUser.id && task.status !== 'completed'
     ).length;
   }, [tasks]);
+
+  // 计算待审核数量
+  const pendingReviewCount = React.useMemo(() => {
+    return reviewRecords.filter(r => {
+      if (r.finalStatus !== 'pending') return false;
+
+      if (currentUser.role === 'supervisor' && r.currentStage === 'supervisor_review') {
+        return r.supervisor?.decision === 'pending';
+      }
+
+      if (currentUser.role === 'manager') {
+        if (r.currentStage === 'manager_review') {
+          return r.manager?.decision === 'pending';
+        }
+        if (r.currentStage === 'supervisor_review') {
+          return r.supervisor?.decision === 'pending';
+        }
+      }
+
+      return false;
+    }).length;
+  }, [reviewRecords]);
 
   // 判断当前是否显示任务看板 (已废弃，使用标签页代替)
   // const [isTaskBoardOpen, setIsTaskBoardOpen] = React.useState(false);
@@ -458,7 +492,7 @@ export default function Home() {
   const handleTabSelect = (tabId: string) => {
     setActiveTabId(tabId);
     const tab = tabs.find(t => t.id === tabId);
-    if (tab) {
+    if (tab && tab.documentId) {
       const doc = getDocumentById(tab.documentId);
       if (doc) {
         setEditingContent(doc.content);
@@ -476,11 +510,13 @@ export default function Home() {
       if (newTabs.length > 0) {
         const newActiveTab = newTabs[newTabs.length - 1];
         setActiveTabId(newActiveTab.id);
-        const doc = getDocumentById(newActiveTab.documentId);
-        if (doc) {
-          setEditingContent(doc.content);
-          setOriginalContent(doc.content);
-          setSelectedNodeId(newActiveTab.documentId);
+        if (newActiveTab.documentId) {
+          const doc = getDocumentById(newActiveTab.documentId);
+          if (doc) {
+            setEditingContent(doc.content);
+            setOriginalContent(doc.content);
+            setSelectedNodeId(newActiveTab.documentId);
+          }
         }
       } else {
         setActiveTabId(null);
@@ -677,6 +713,174 @@ export default function Home() {
       }
     }
   };
+
+  // Review handlers
+  const handleOpenReviewCenter = () => {
+    const existingTab = tabs.find(t => t.type === 'review_center');
+    if (existingTab) {
+      setActiveTabId(existingTab.id);
+    } else {
+      const newTab: EditorTab = {
+        id: `tab_review_${generateId()}`,
+        title: '审核中心',
+        type: 'review_center',
+        isModified: false,
+      };
+      setTabs([...tabs, newTab]);
+      setActiveTabId(newTab.id);
+    }
+  };
+
+  const handleOpenReviewDetail = (review: ReviewRecord) => {
+    setSelectedReviewRecord(review);
+    setIsReviewDetailModalOpen(true);
+  };
+
+  const handleApproveReview = (comment: string) => {
+    if (!selectedReviewRecord) return;
+
+    const now = new Date().toISOString();
+    setReviewRecords(records =>
+      records.map(r => {
+        if (r.id !== selectedReviewRecord.id) return r;
+
+        if (r.currentStage === 'supervisor_review') {
+          // 主管通过，流转到经理
+          return {
+            ...r,
+            currentStage: 'manager_review' as const,
+            supervisor: {
+              ...r.supervisor!,
+              decision: 'approved' as const,
+              comment,
+              reviewedAt: now,
+            },
+            manager: {
+              id: 'user_001', // 李明经理
+              name: '李明',
+              decision: 'pending' as const,
+            },
+            updatedAt: now,
+          };
+        } else if (r.currentStage === 'manager_review') {
+          // 经理通过，审核完成
+          return {
+            ...r,
+            manager: {
+              ...r.manager!,
+              decision: 'approved' as const,
+              comment,
+              reviewedAt: now,
+            },
+            finalStatus: 'approved' as const,
+            completedAt: now,
+            updatedAt: now,
+          };
+        }
+        return r;
+      })
+    );
+
+    const stageText = selectedReviewRecord.currentStage === 'supervisor_review' ? '初审通过，已流转至经理终审' : '审核通过，文档已发布';
+    showToast(stageText, 'success');
+    setIsReviewDetailModalOpen(false);
+    setSelectedReviewRecord(null);
+  };
+
+  const handleRejectReview = (comment: string) => {
+    if (!selectedReviewRecord) return;
+
+    const now = new Date().toISOString();
+    setReviewRecords(records =>
+      records.map(r => {
+        if (r.id !== selectedReviewRecord.id) return r;
+
+        if (r.currentStage === 'supervisor_review') {
+          return {
+            ...r,
+            supervisor: {
+              ...r.supervisor!,
+              decision: 'rejected' as const,
+              comment,
+              reviewedAt: now,
+            },
+            finalStatus: 'rejected' as const,
+            completedAt: now,
+            updatedAt: now,
+          };
+        } else if (r.currentStage === 'manager_review') {
+          return {
+            ...r,
+            manager: {
+              ...r.manager!,
+              decision: 'rejected' as const,
+              comment,
+              reviewedAt: now,
+            },
+            finalStatus: 'rejected' as const,
+            completedAt: now,
+            updatedAt: now,
+          };
+        }
+        return r;
+      })
+    );
+
+    showToast('审核已驳回', 'info');
+    setIsReviewDetailModalOpen(false);
+    setSelectedReviewRecord(null);
+  };
+
+  const handleTransferReview = (targetUserId: string, comment: string) => {
+    // 转审逻辑（简化处理）
+    showToast('已转交审核', 'success');
+    setIsReviewDetailModalOpen(false);
+    setSelectedReviewRecord(null);
+  };
+
+  const handleSubmitDocumentReview = (reviewerId: string, comment: string) => {
+    if (!documentToReview) return;
+
+    const now = new Date().toISOString();
+    const reviewer = mockUsers.find(u => u.id === reviewerId);
+
+    const newReview: ReviewRecord = {
+      id: `review_${generateId()}`,
+      documentId: documentToReview.id,
+      documentTitle: documentToReview.title,
+      projectId: currentProject.id,
+      projectName: currentProject.name,
+      submitterId: currentUser.id,
+      submitterName: currentUser.name,
+      submittedAt: now,
+      submitComment: comment || undefined,
+      currentStage: 'supervisor_review',
+      supervisor: {
+        id: reviewerId,
+        name: reviewer?.name || '',
+        decision: 'pending',
+      },
+      aiCheck: {
+        score: Math.floor(85 + Math.random() * 15),
+        checkedAt: now,
+        summary: '文档质量良好，可以提交审核',
+        issues: [],
+      },
+      finalStatus: 'pending',
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    setReviewRecords([newReview, ...reviewRecords]);
+    showToast('文档已提交审核', 'success');
+    setIsSubmitReviewModalOpen(false);
+    setDocumentToReview(null);
+  };
+
+  // 获取可用的审核人列表（主管和经理）
+  const getReviewers = React.useMemo(() => {
+    return mockUsers.filter(u => u.role === 'supervisor' || u.role === 'manager');
+  }, []);
 
   const handleAssignTask = (node: FileTreeNode) => {
     const doc = getDocumentById(node.id);
@@ -906,6 +1110,7 @@ export default function Home() {
         notifications={mockNotifications}
         unreadCount={mockNotifications.filter(n => !n.isRead).length}
         unfinishedTaskCount={unfinishedTaskCount}
+        pendingReviewCount={pendingReviewCount}
         documents={mockDocuments}
         projects={mockProjects}
         folders={mockFolders}
@@ -913,6 +1118,7 @@ export default function Home() {
           openDocumentById(docId);
         }}
         onOpenTaskBoard={handleOpenTaskBoard}
+        onOpenReviewCenter={handleOpenReviewCenter}
         isSearchOpen={isSearchOpen}
         onSearchOpenChange={setIsSearchOpen}
       />
@@ -1003,6 +1209,14 @@ export default function Home() {
                   onOpenDocument={handleOpenDocumentFromTask}
                   onUpdateProgress={handleUpdateTaskProgress}
                   onUpdateStatus={handleUpdateTaskStatus}
+                />
+              ) : tabs.find(t => t.id === activeTabId)?.type === 'review_center' ? (
+                // 审核中心
+                <ReviewCenter
+                  reviews={reviewRecords}
+                  currentUser={currentUser}
+                  onOpenDetail={handleOpenReviewDetail}
+                  onOpenDocument={(documentId) => openDocumentById(documentId)}
                 />
               ) : (
                 <>
@@ -1193,6 +1407,34 @@ export default function Home() {
           onAssign={handleTaskAssign}
         />
       )}
+
+      {/* Submit Review Modal */}
+      <SubmitReviewModal
+        isOpen={isSubmitReviewModalOpen}
+        document={documentToReview}
+        reviewers={getReviewers}
+        currentUser={currentUser}
+        onClose={() => {
+          setIsSubmitReviewModalOpen(false);
+          setDocumentToReview(null);
+        }}
+        onSubmit={handleSubmitDocumentReview}
+      />
+
+      {/* Review Detail Modal */}
+      <ReviewDetailModal
+        isOpen={isReviewDetailModalOpen}
+        review={selectedReviewRecord}
+        currentUser={currentUser}
+        onClose={() => {
+          setIsReviewDetailModalOpen(false);
+          setSelectedReviewRecord(null);
+        }}
+        onApprove={handleApproveReview}
+        onReject={handleRejectReview}
+        onTransfer={handleTransferReview}
+        onOpenDocument={(documentId) => openDocumentById(documentId)}
+      />
     </div>
   );
 }

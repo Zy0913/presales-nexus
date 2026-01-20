@@ -292,7 +292,7 @@ const EditableTaskRow: React.FC<{
               <div className="mt-auto pt-4 border-t border-zinc-200/60 flex items-center justify-between">
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="secondary"
                   onClick={(e) => { e.stopPropagation(); onOpenDocument(task.documentId, task.documentName); }}
                   className="h-8 text-xs bg-white hover:bg-zinc-50 border-zinc-200 text-zinc-700"
                 >
@@ -421,11 +421,11 @@ const PersonGroup: React.FC<{
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-zinc-900">{user.name}</span>
             {isCurrentUser && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-blue-100 text-blue-700 border-0">
+              <Badge variant="primary" className="text-[10px] px-1.5 py-0 h-4 bg-blue-100 text-blue-700 border-0">
                 我
               </Badge>
             )}
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-zinc-200 text-zinc-600 border-0">
+            <Badge variant="default" className="text-[10px] px-1.5 py-0 h-4 bg-zinc-200 text-zinc-600 border-0">
               {roleLabel}
             </Badge>
           </div>
@@ -578,7 +578,7 @@ export default function ManagerTaskBoard({
         <div className="flex items-center gap-6">
           <h1 className="text-lg font-semibold text-zinc-900 flex items-center gap-2">
             {viewTitle}
-            <Badge variant="secondary" className="bg-zinc-100 text-zinc-600 font-normal rounded-full px-2">
+            <Badge variant="default" className="bg-zinc-100 text-zinc-600 font-normal rounded-full px-2">
               {overallStats.totalUsers} 人
             </Badge>
           </h1>
