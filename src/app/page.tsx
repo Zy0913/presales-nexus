@@ -45,6 +45,7 @@ import {
   Tab,
   TabType,
   ReviewRecord,
+  Notification as AppNotification,
 } from '@/types';
 import { FileText, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import TaskBoard from '@/components/tasks/TaskBoard';
@@ -132,7 +133,7 @@ export default function Home() {
   const [isReviewDetailModalOpen, setIsReviewDetailModalOpen] = React.useState(false);
 
   // Notification state
-  const [notifications, setNotifications] = React.useState<Notification[]>(mockNotifications);
+  const [notifications, setNotifications] = React.useState<AppNotification[]>(mockNotifications);
 
   // Toast
   const { toasts, showToast } = useToast();
@@ -813,7 +814,7 @@ export default function Home() {
     }
   };
 
-  const handleNotificationClick = (notification: Notification) => {
+  const handleNotificationClick = (notification: AppNotification) => {
     // 标记为已读
     setNotifications(notifications.map(n =>
       n.id === notification.id ? { ...n, isRead: true } : n
@@ -921,7 +922,7 @@ export default function Home() {
     );
 
     // 🆕 生成通知给提交人
-    const submitterNotification: Notification = {
+    const submitterNotification: AppNotification = {
       id: `notif_${generateId()}`,
       type: 'approval_result',
       priority: 'normal',
@@ -945,7 +946,7 @@ export default function Home() {
 
     // 🆕 如果是主管审核通过，还要通知经理
     if (selectedReviewRecord.currentStage === 'supervisor_review') {
-      const managerNotification: Notification = {
+      const managerNotification: AppNotification = {
         id: `notif_${generateId()}`,
         type: 'approval_request',
         priority: 'high',
@@ -1014,7 +1015,7 @@ export default function Home() {
     );
 
     // 🆕 生成通知给提交人
-    const notification: Notification = {
+    const notification: AppNotification = {
       id: `notif_${generateId()}`,
       type: 'approval_result',
       priority: 'high',
@@ -1083,7 +1084,7 @@ export default function Home() {
     setReviewRecords([newReview, ...reviewRecords]);
 
     // 🆕 生成通知给审核人
-    const newNotification: Notification = {
+    const newNotification: AppNotification = {
       id: `notif_${generateId()}`,
       type: 'approval_request',
       priority: 'high',
@@ -1161,7 +1162,7 @@ export default function Home() {
     setTasks([...tasks, task]);
 
     // 🆕 生成通知给任务执行人
-    const notification: Notification = {
+    const notification: AppNotification = {
       id: `notif_${generateId()}`,
       type: 'task_assigned',
       priority: newTask.priority === 'urgent' ? 'urgent' : 'high',
@@ -1248,7 +1249,7 @@ export default function Home() {
     // 🆕 生成通知（仅当状态改为 completed 或 blocked 时通知分配人）
     if ((status === 'completed' || status === 'blocked') && task.assignerId !== currentUser.id) {
       const statusText = status === 'completed' ? '已完成' : '被阻塞';
-      const notification: Notification = {
+      const notification: AppNotification = {
         id: `notif_${generateId()}`,
         type: status === 'blocked' ? 'task_blocked' : 'task_update',
         priority: status === 'blocked' ? 'high' : 'normal',

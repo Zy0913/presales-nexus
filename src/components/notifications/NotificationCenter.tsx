@@ -105,9 +105,9 @@ export function NotificationCenter({
           <div className="flex items-center gap-3">
             <h1 className="text-lg font-semibold text-zinc-900">消息中心</h1>
             {counts.all > 0 && (
-              <Badge variant="secondary" className="bg-zinc-100 text-zinc-600 border-0 rounded-full">
+              <span className="inline-flex items-center justify-center h-5 px-2 bg-zinc-100 text-zinc-600 text-xs font-medium rounded-full">
                 {counts.all} 条未读
-              </Badge>
+              </span>
             )}
           </div>
           {counts.all > 0 && (
