@@ -43,20 +43,8 @@ export function UserManagement() {
   return (
     <div className="h-full flex flex-col bg-zinc-50 overflow-hidden">
       <div className="flex-1 flex flex-col bg-white rounded-xl border border-zinc-200 m-4 overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 flex-shrink-0">
-          <div>
-            <h2 className="text-lg font-semibold text-zinc-900">用户管理</h2>
-            <p className="text-sm text-zinc-500 mt-0.5">管理企业所有成员及其系统权限</p>
-          </div>
-          <Button onClick={() => setIsAddModalOpen(true)} size="sm" className="gap-2">
-            <Plus className="w-4 h-4" />
-            添加用户
-          </Button>
-        </div>
-
         {/* Filters */}
-        <div className="px-6 py-3 flex items-center gap-4 bg-zinc-50/50 border-b border-zinc-100 flex-shrink-0">
+        <div className="px-6 py-3 flex items-center justify-between gap-4 bg-zinc-50/50 border-b border-zinc-100 flex-shrink-0">
           <div className="relative w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
             <Input
@@ -66,6 +54,10 @@ export function UserManagement() {
               className="pl-9 bg-white h-9"
             />
           </div>
+          <Button onClick={() => setIsAddModalOpen(true)} size="sm" className="gap-2">
+            <Plus className="w-4 h-4" />
+            添加用户
+          </Button>
         </div>
 
         {/* Users List */}

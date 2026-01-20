@@ -85,53 +85,156 @@ const ReadOnlyTaskRow: React.FC<{
   task: Task;
   onOpenDocument: (documentId: string, documentName: string) => void;
 }> = ({ task, onOpenDocument }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const StatusIcon = statusConfig[task.status].icon;
   const PriorityIcon = priorityConfig[task.priority].icon;
   const overdue = isOverdue(task.dueDate);
 
+  const reversedTimeline = useMemo(() => {
+    return [...task.timeline].reverse();
+  }, [task.timeline]);
+
   return (
-    <div
-      className="group grid grid-cols-[20px_20px_1fr_180px_80px] gap-4 px-4 py-3 cursor-pointer text-sm items-center border-b border-zinc-100 last:border-none bg-white transition-colors hover:bg-zinc-50/50"
-      onClick={() => onOpenDocument(task.documentId, task.documentName)}
-    >
-      {/* 1. 状态列 */}
-      <div className="flex items-center justify-center w-5 h-5 shrink-0" title={statusConfig[task.status].label}>
-        <StatusIcon className={cn("w-4 h-4", statusConfig[task.status].color)} />
-      </div>
-
-      {/* 2. 优先级列 */}
-      <div className="flex items-center justify-center w-5 h-5 shrink-0" title={`优先级: ${priorityConfig[task.priority].label}`}>
-        <PriorityIcon className={cn("w-3.5 h-3.5", priorityConfig[task.priority].color)} />
-      </div>
-
-      {/* 3. 标题与项目 */}
-      <div className="flex items-center gap-3 min-w-0 overflow-hidden">
-        <span className={cn(
-          "font-medium text-zinc-900 truncate",
-          task.status === 'completed' && "text-zinc-500 line-through decoration-zinc-300"
-        )}>
-          {task.title}
-        </span>
-        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-zinc-100 text-zinc-500 truncate max-w-[120px] shrink-0 border border-zinc-200">
-          {task.projectName}
-        </span>
-      </div>
-
-      {/* 4. 进度条 */}
-      <div className="flex items-center gap-2">
-        <div className="flex-1 h-1.5 bg-zinc-100 rounded-full overflow-hidden">
-          <div
-            className={cn("h-full rounded-full transition-all", task.status === 'completed' ? 'bg-emerald-500' : 'bg-blue-500')}
-            style={{ width: `${task.progress}%` }}
-          />
+    <div className="group border-b border-zinc-100 last:border-none bg-white transition-colors hover:bg-zinc-50/50">
+      {/* 紧凑行内容 */}
+      <div
+        className={cn(
+          "grid grid-cols-[20px_20px_1fr_180px_80px] gap-4 px-4 py-3 cursor-pointer text-sm items-center",
+          isExpanded && "bg-zinc-50"
+        )}
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        {/* 1. 状态列 */}
+        <div className="flex items-center justify-center w-5 h-5 shrink-0" title={statusConfig[task.status].label}>
+          <StatusIcon className={cn("w-4 h-4", statusConfig[task.status].color)} />
         </div>
-        <span className="text-[10px] w-8 text-right text-zinc-500 font-mono">{task.progress}%</span>
+
+        {/* 2. 优先级列 */}
+        <div className="flex items-center justify-center w-5 h-5 shrink-0" title={`优先级: ${priorityConfig[task.priority].label}`}>
+          <PriorityIcon className={cn("w-3.5 h-3.5", priorityConfig[task.priority].color)} />
+        </div>
+
+        {/* 3. 标题与项目 */}
+        <div className="flex items-center gap-3 min-w-0 overflow-hidden">
+          <span className={cn(
+            "font-medium text-zinc-900 truncate",
+            task.status === 'completed' && "text-zinc-500 line-through decoration-zinc-300"
+          )}>
+            {task.title}
+          </span>
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-zinc-100 text-zinc-500 truncate max-w-[120px] shrink-0 border border-zinc-200">
+            {task.projectName}
+          </span>
+        </div>
+
+        {/* 4. 进度条 */}
+        <div className="flex items-center gap-2">
+          <div className="flex-1 h-1.5 bg-zinc-100 rounded-full overflow-hidden">
+            <div
+              className={cn("h-full rounded-full transition-all", task.status === 'completed' ? 'bg-emerald-500' : 'bg-blue-500')}
+              style={{ width: `${task.progress}%` }}
+            />
+          </div>
+          <span className="text-[10px] w-8 text-right text-zinc-500 font-mono">{task.progress}%</span>
+        </div>
+
+        {/* 5. 截止时间 */}
+        <div className={cn("text-right truncate text-xs text-zinc-500", overdue && task.status !== 'completed' ? "text-red-600 font-medium" : "")}>
+          {task.dueDate ? formatDate(task.dueDate) : '-'}
+        </div>
       </div>
 
-      {/* 5. 截止时间 */}
-      <div className={cn("text-right truncate text-xs text-zinc-500", overdue && task.status !== 'completed' ? "text-red-600 font-medium" : "")}>
-        {task.dueDate ? formatDate(task.dueDate) : '-'}
-      </div>
+      {/* 展开详情 - 只读模式 */}
+      {isExpanded && (
+        <div className="px-12 pb-6 pt-2 bg-zinc-50 border-t border-zinc-100/50">
+          <div className="flex gap-8">
+            {/* 左侧：详情（只读） */}
+            <div className="flex-1 min-w-0 flex flex-col h-full">
+              {/* 路径信息 */}
+              <div className="flex items-center gap-1.5 text-xs text-zinc-500 mb-4">
+                <Folder className="w-3.5 h-3.5" />
+                <span className="truncate">{task.documentPath}</span>
+              </div>
+
+              {/* 描述 */}
+              {task.description && (
+                <div className="text-sm text-zinc-700 mb-6 leading-relaxed bg-white p-4 rounded-lg border border-zinc-200/60 shadow-sm">
+                  {task.description}
+                </div>
+              )}
+
+              {/* 进度显示（只读） */}
+              <div className="mb-6 bg-white p-4 rounded-lg border border-zinc-200/60 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-medium text-zinc-500">当前进度</span>
+                  <span className="text-xs font-bold text-zinc-900 font-mono">{task.progress}%</span>
+                </div>
+                <div className="h-2 bg-zinc-100 rounded-full overflow-hidden">
+                  <div
+                    className={cn("h-full rounded-full transition-all", task.status === 'completed' ? 'bg-emerald-500' : 'bg-blue-500')}
+                    style={{ width: `${task.progress}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* 底部操作栏 - 只有查看文档按钮 */}
+              <div className="mt-auto pt-4 border-t border-zinc-200/60 flex items-center justify-between">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={(e) => { e.stopPropagation(); onOpenDocument(task.documentId, task.documentName); }}
+                  className="h-8 text-xs bg-white hover:bg-zinc-50 border-zinc-200 text-zinc-700"
+                >
+                  <FileText className="w-3.5 h-3.5 mr-1.5 text-zinc-500" />
+                  打开文档
+                </Button>
+                
+                {/* 只读提示 */}
+                <div className="text-xs text-zinc-400 flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-zinc-300" />
+                  只读模式
+                </div>
+              </div>
+            </div>
+
+            {/* 右侧：时间线 */}
+            <div className="w-72 pt-1 border-l border-zinc-200/60 pl-8 flex-shrink-0">
+              <h4 className="text-xs font-semibold text-zinc-900 mb-4 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-zinc-400" />
+                动态记录
+              </h4>
+              <div className="space-y-5 relative before:absolute before:left-[3px] before:top-1.5 before:bottom-0 before:w-px before:bg-zinc-200">
+                {reversedTimeline.map((event, index) => (
+                  <div key={index} className="relative pl-4 group/timeline">
+                    <div className="absolute left-0 top-1.5 w-1.5 h-1.5 rounded-full bg-zinc-300 ring-4 ring-zinc-50 group-hover/timeline:bg-blue-500 transition-colors" />
+                    <div className="text-xs">
+                      <div className="flex justify-between items-baseline mb-1">
+                        <span className="font-medium text-zinc-900">{event.userName}</span>
+                        <span className="text-[10px] text-zinc-400">
+                          {new Date(event.timestamp).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' })}
+                        </span>
+                      </div>
+                      <div className="text-zinc-500">
+                        {event.type === 'assigned' && '分配了任务'}
+                        {event.type === 'started' && '开始工作'}
+                        {event.type === 'progress_updated' && '更新进度'}
+                        {event.type === 'completed' && '完成任务'}
+                        {event.type === 'blocked' && '标记受阻'}
+                        {event.type === 'status_changed' && '更新状态'}
+                      </div>
+                      {event.note && (
+                        <div className="mt-1.5 text-zinc-600 bg-white p-2 rounded border border-zinc-100 text-[11px] leading-snug shadow-sm">
+                          {event.note}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
