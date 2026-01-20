@@ -75,12 +75,15 @@ export function Header({
       {/* Left section */}
       <div className="flex items-center gap-3">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
+        <button 
+          onClick={() => window.location.href = window.location.origin + (process.env.NEXT_PUBLIC_BASE_PATH || '') + '/'}
+          className="flex items-center gap-2 cursor-pointer"
+        >
           <div className="w-7 h-7 rounded-lg flex items-center justify-center overflow-hidden bg-white">
             <img src={`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/favicon.ico`} alt="Logo" className="w-full h-full object-contain" />
           </div>
           <span className="font-semibold text-zinc-900 text-sm hidden sm:block">售前协作平台</span>
-        </Link>
+        </button>
 
         {/* Breadcrumb - 只在有路径时显示分割线和面包屑 */}
         {currentPath.length > 0 && (

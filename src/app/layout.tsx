@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import "./globals.css";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
@@ -21,10 +20,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
-      <head>
-        <link rel="icon" href={`${basePath}/favicon.ico`} />
-        <link rel="shortcut icon" href={`${basePath}/favicon.ico`} />
-      </head>
       <body className="antialiased">
         {children}
       </body>
