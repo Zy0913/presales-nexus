@@ -55,6 +55,7 @@ import { SubmitReviewModal } from '@/components/review/SubmitReviewModal';
 import { ReviewDetailModal } from '@/components/review/ReviewDetailModal';
 import { ProjectManagement } from '@/components/management/ProjectManagement';
 import { UserManagement } from '@/components/management/UserManagement';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 
 export default function Home() {
   // Project state
@@ -129,6 +130,9 @@ export default function Home() {
   const [documentToReview, setDocumentToReview] = React.useState<Document | null>(null);
   const [selectedReviewRecord, setSelectedReviewRecord] = React.useState<ReviewRecord | null>(null);
   const [isReviewDetailModalOpen, setIsReviewDetailModalOpen] = React.useState(false);
+
+  // Notification state
+  const [notifications, setNotifications] = React.useState<Notification[]>(mockNotifications);
 
   // Toast
   const { toasts, showToast } = useToast();
@@ -491,18 +495,19 @@ export default function Home() {
   const handleTabSelect = (tabId: string) => {
     setActiveTabId(tabId);
     const tab = tabs.find(t => t.id === tabId);
-    
+
     // 如果切换到管理类标签页，收起 AI 助手
     if (tab && (
-      tab.type === 'task_board' || 
-      tab.type === 'manager_task_board' || 
+      tab.type === 'task_board' ||
+      tab.type === 'manager_task_board' ||
       tab.type === 'review_center' ||
       tab.type === 'project_management' ||
-      tab.type === 'user_management'
+      tab.type === 'user_management' ||
+      tab.type === 'notification_center'
     )) {
       setIsAIPanelOpen(false);
     }
-    
+
     if (tab && tab.documentId) {
       const doc = getDocumentById(tab.documentId);
       if (doc) {
@@ -772,7 +777,7 @@ export default function Home() {
   const handleOpenUserManagement = () => {
     // 收起 AI 助手面板
     setIsAIPanelOpen(false);
-    
+
     const existingTab = tabs.find(t => t.type === 'user_management');
     if (existingTab) {
       setActiveTabId(existingTab.id);
@@ -786,6 +791,83 @@ export default function Home() {
       setTabs([...tabs, newTab]);
       setActiveTabId(newTab.id);
     }
+  };
+
+  // Notification Center handlers
+  const handleOpenNotificationCenter = () => {
+    // 收起 AI 助手面板
+    setIsAIPanelOpen(false);
+
+    const existingTab = tabs.find(t => t.type === 'notification_center');
+    if (existingTab) {
+      setActiveTabId(existingTab.id);
+    } else {
+      const newTab: EditorTab = {
+        id: `tab_notifications_${generateId()}`,
+        title: '消息中心',
+        type: 'notification_center',
+        isModified: false,
+      };
+      setTabs([...tabs, newTab]);
+      setActiveTabId(newTab.id);
+    }
+  };
+
+  const handleNotificationClick = (notification: Notification) => {
+    // 标记为已读
+    setNotifications(notifications.map(n =>
+      n.id === notification.id ? { ...n, isRead: true } : n
+    ));
+
+    // 根据 targetType 跳转
+    switch (notification.targetType) {
+      case 'document':
+        if (notification.documentId) {
+          openDocumentById(notification.documentId);
+        }
+        break;
+
+      case 'review_center':
+        handleOpenReviewCenter();
+        // 延迟打开审核详情弹窗
+        setTimeout(() => {
+          const review = reviewRecords.find(r => r.id === notification.reviewId);
+          if (review) {
+            setSelectedReviewRecord(review);
+            setIsReviewDetailModalOpen(true);
+          }
+        }, 300);
+        break;
+
+      case 'task_board':
+        handleOpenTaskBoard();
+        // TODO: 高亮对应任务卡片
+        break;
+
+      case 'project':
+        // 跳转到项目详情页
+        if (notification.projectId) {
+          window.location.href = `/projects/${notification.projectId}`;
+        }
+        break;
+    }
+  };
+
+  const handleMarkAsRead = (notificationId: string) => {
+    setNotifications(notifications.map(n =>
+      n.id === notificationId ? { ...n, isRead: true } : n
+    ));
+    showToast('已标记为已读', 'success');
+  };
+
+  const handleMarkAllAsRead = () => {
+    setNotifications(notifications.map(n => ({ ...n, isRead: true })));
+    showToast('已全部标记为已读', 'success');
+  };
+
+  const handleDeleteNotification = (notificationId: string) => {
+    setNotifications(notifications.filter(n => n.id !== notificationId));
+    showToast('已删除通知', 'success');
   };
 
   const handleOpenReviewDetail = (review: ReviewRecord) => {
@@ -814,7 +896,7 @@ export default function Home() {
             },
             manager: {
               id: 'user_001', // 李明经理
-              name: '李明',
+              name: '张明远',
               decision: 'pending' as const,
             },
             updatedAt: now,
@@ -837,6 +919,54 @@ export default function Home() {
         return r;
       })
     );
+
+    // 🆕 生成通知给提交人
+    const submitterNotification: Notification = {
+      id: `notif_${generateId()}`,
+      type: 'approval_result',
+      priority: 'normal',
+      title: '审批通过',
+      content: `您的文档《${selectedReviewRecord.documentTitle}》已通过${currentUser.name}的审核`,
+      isRead: false,
+      createdAt: now,
+      senderId: currentUser.id,
+      senderName: currentUser.name,
+      senderAvatar: currentUser.avatar,
+      projectId: selectedReviewRecord.projectId,
+      projectName: selectedReviewRecord.projectName,
+      documentId: selectedReviewRecord.documentId,
+      documentTitle: selectedReviewRecord.documentTitle,
+      targetType: 'document',
+      targetId: selectedReviewRecord.documentId,
+      actionLabel: '查看文档',
+    };
+
+    setNotifications([submitterNotification, ...notifications]);
+
+    // 🆕 如果是主管审核通过，还要通知经理
+    if (selectedReviewRecord.currentStage === 'supervisor_review') {
+      const managerNotification: Notification = {
+        id: `notif_${generateId()}`,
+        type: 'approval_request',
+        priority: 'high',
+        title: '审批请求',
+        content: `${currentUser.name} 已初审通过《${selectedReviewRecord.documentTitle}》，等待您的终审`,
+        isRead: false,
+        createdAt: now,
+        senderId: currentUser.id,
+        senderName: currentUser.name,
+        senderAvatar: currentUser.avatar,
+        projectId: selectedReviewRecord.projectId,
+        projectName: selectedReviewRecord.projectName,
+        documentId: selectedReviewRecord.documentId,
+        documentTitle: selectedReviewRecord.documentTitle,
+        reviewId: selectedReviewRecord.id,
+        targetType: 'review_center',
+        targetId: selectedReviewRecord.id,
+        actionLabel: '去审批',
+      };
+      setNotifications([managerNotification, submitterNotification, ...notifications]);
+    }
 
     const stageText = selectedReviewRecord.currentStage === 'supervisor_review' ? '初审通过，已流转至经理终审' : '审核通过，文档已发布';
     showToast(stageText, 'success');
@@ -883,6 +1013,28 @@ export default function Home() {
       })
     );
 
+    // 🆕 生成通知给提交人
+    const notification: Notification = {
+      id: `notif_${generateId()}`,
+      type: 'approval_result',
+      priority: 'high',
+      title: '审批驳回',
+      content: `您的文档《${selectedReviewRecord.documentTitle}》被${currentUser.name}驳回，请修改后重新提交`,
+      isRead: false,
+      createdAt: now,
+      senderId: currentUser.id,
+      senderName: currentUser.name,
+      senderAvatar: currentUser.avatar,
+      projectId: selectedReviewRecord.projectId,
+      projectName: selectedReviewRecord.projectName,
+      documentId: selectedReviewRecord.documentId,
+      documentTitle: selectedReviewRecord.documentTitle,
+      targetType: 'document',
+      targetId: selectedReviewRecord.documentId,
+      actionLabel: '查看文档',
+    };
+
+    setNotifications([notification, ...notifications]);
     showToast('审核已驳回', 'info');
     setIsReviewDetailModalOpen(false);
     setSelectedReviewRecord(null);
@@ -929,7 +1081,31 @@ export default function Home() {
     };
 
     setReviewRecords([newReview, ...reviewRecords]);
-    showToast('文档已提交审核', 'success');
+
+    // 🆕 生成通知给审核人
+    const newNotification: Notification = {
+      id: `notif_${generateId()}`,
+      type: 'approval_request',
+      priority: 'high',
+      title: '审批请求',
+      content: `${currentUser.name} 提交了《${documentToReview.title}》等待您的审批`,
+      isRead: false,
+      createdAt: now,
+      senderId: currentUser.id,
+      senderName: currentUser.name,
+      senderAvatar: currentUser.avatar,
+      projectId: currentProject.id,
+      projectName: currentProject.name,
+      documentId: documentToReview.id,
+      documentTitle: documentToReview.title,
+      reviewId: newReview.id,
+      targetType: 'review_center',
+      targetId: newReview.id,
+      actionLabel: '去审批',
+    };
+
+    setNotifications([newNotification, ...notifications]);
+    showToast(`文档已提交审核，已通知 ${reviewer?.name}`, 'success');
     setIsSubmitReviewModalOpen(false);
     setDocumentToReview(null);
   };
@@ -966,22 +1142,45 @@ export default function Home() {
   };
 
   const handleTaskAssign = (newTask: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'timeline'>) => {
+    const now = new Date().toISOString();
     const task: Task = {
       ...newTask,
       id: `task_${generateId()}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
       timeline: [
         {
           type: 'assigned',
           userId: newTask.assignerId,
           userName: newTask.assignerName,
-          timestamp: new Date().toISOString(),
+          timestamp: now,
         },
       ],
     };
 
     setTasks([...tasks, task]);
+
+    // 🆕 生成通知给任务执行人
+    const notification: Notification = {
+      id: `notif_${generateId()}`,
+      type: 'task_assigned',
+      priority: newTask.priority === 'urgent' ? 'urgent' : 'high',
+      title: '新任务分配',
+      content: `${newTask.assignerName} 分配给您任务：${newTask.title}`,
+      isRead: false,
+      createdAt: now,
+      senderId: newTask.assignerId,
+      senderName: newTask.assignerName,
+      senderAvatar: mockUsers.find(u => u.id === newTask.assignerId)?.avatar,
+      projectId: newTask.projectId,
+      projectName: newTask.projectName,
+      taskId: task.id,
+      targetType: 'task_board',
+      targetId: task.id,
+      actionLabel: '查看任务',
+    };
+
+    setNotifications([notification, ...notifications]);
     showToast(`已将任务分配给 ${newTask.assigneeName}`, 'success');
   };
 
@@ -1012,35 +1211,64 @@ export default function Home() {
   };
 
   const handleUpdateTaskStatus = (taskId: string, status: TaskStatus, note?: string) => {
+    const now = new Date().toISOString();
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
     setTasks(
-      tasks.map((task) => {
-        if (task.id === taskId) {
+      tasks.map((t) => {
+        if (t.id === taskId) {
           const updatedTask: Task = {
-            ...task,
+            ...t,
             status,
             timeline: [
-              ...task.timeline,
+              ...t.timeline,
               {
                 type: status === 'completed' ? 'completed' : status === 'blocked' ? 'blocked' : 'status_changed',
                 userId: currentUser.id,
                 userName: currentUser.name,
-                timestamp: new Date().toISOString(),
+                timestamp: now,
                 note,
               },
             ],
-            updatedAt: new Date().toISOString(),
+            updatedAt: now,
           };
 
           if (status === 'completed') {
-            updatedTask.completedAt = new Date().toISOString();
+            updatedTask.completedAt = now;
             updatedTask.progress = 100;
           }
 
           return updatedTask;
         }
-        return task;
+        return t;
       })
     );
+
+    // 🆕 生成通知（仅当状态改为 completed 或 blocked 时通知分配人）
+    if ((status === 'completed' || status === 'blocked') && task.assignerId !== currentUser.id) {
+      const statusText = status === 'completed' ? '已完成' : '被阻塞';
+      const notification: Notification = {
+        id: `notif_${generateId()}`,
+        type: status === 'blocked' ? 'task_blocked' : 'task_update',
+        priority: status === 'blocked' ? 'high' : 'normal',
+        title: '任务状态更新',
+        content: `${currentUser.name} 将任务《${task.title}》标记为${statusText}`,
+        isRead: false,
+        createdAt: now,
+        senderId: currentUser.id,
+        senderName: currentUser.name,
+        senderAvatar: currentUser.avatar,
+        projectId: task.projectId,
+        projectName: task.projectName,
+        taskId: task.id,
+        targetType: 'task_board',
+        targetId: task.id,
+        actionLabel: '查看任务',
+      };
+
+      setNotifications([notification, ...notifications]);
+    }
 
     const statusText = {
       todo: '待办',
@@ -1164,8 +1392,8 @@ export default function Home() {
         currentProject={currentProject}
         currentPath={currentDocument ? ['技术方案', currentDocument.title] : []}
         user={currentUser}
-        notifications={mockNotifications}
-        unreadCount={mockNotifications.filter(n => !n.isRead).length}
+        notifications={notifications}
+        unreadCount={notifications.filter(n => !n.isRead).length}
         unfinishedTaskCount={unfinishedTaskCount}
         pendingReviewCount={pendingReviewCount}
         documents={mockDocuments}
@@ -1178,6 +1406,8 @@ export default function Home() {
         onOpenReviewCenter={handleOpenReviewCenter}
         onOpenProjectManagement={handleOpenProjectManagement}
         onOpenUserManagement={handleOpenUserManagement}
+        onOpenNotificationCenter={handleOpenNotificationCenter}
+        onMarkAllAsRead={handleMarkAllAsRead}
         isSearchOpen={isSearchOpen}
         onSearchOpenChange={setIsSearchOpen}
       />
@@ -1285,6 +1515,15 @@ export default function Home() {
               ) : tabs.find(t => t.id === activeTabId)?.type === 'user_management' ? (
                 // 用户管理
                 <UserManagement />
+              ) : tabs.find(t => t.id === activeTabId)?.type === 'notification_center' ? (
+                // 消息中心
+                <NotificationCenter
+                  notifications={notifications}
+                  onNotificationClick={handleNotificationClick}
+                  onMarkAsRead={handleMarkAsRead}
+                  onMarkAllAsRead={handleMarkAllAsRead}
+                  onDeleteNotification={handleDeleteNotification}
+                />
               ) : (
                 <>
                   <EditorToolbar

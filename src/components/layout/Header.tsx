@@ -17,6 +17,8 @@ import { Button } from '@/components/ui/button';
 import { Project, User, Notification, Document, Folder } from '@/types';
 import { cn } from '@/lib/utils';
 import { SearchDialog } from '@/components/modals/SearchDialog';
+import { formatDistanceToNow } from 'date-fns';
+import { zhCN } from 'date-fns/locale';
 
 interface HeaderProps {
   currentProject: Project | null;
@@ -36,6 +38,8 @@ interface HeaderProps {
   onOpenReviewCenter?: () => void;
   onOpenProjectManagement?: () => void;
   onOpenUserManagement?: () => void;
+  onOpenNotificationCenter?: () => void;
+  onMarkAllAsRead?: () => void;
   isSearchOpen?: boolean;
   onSearchOpenChange?: (open: boolean) => void;
 }
@@ -56,6 +60,8 @@ export function Header({
   onOpenReviewCenter,
   onOpenProjectManagement,
   onOpenUserManagement,
+  onOpenNotificationCenter,
+  onMarkAllAsRead,
   isSearchOpen: externalIsSearchOpen,
   onSearchOpenChange,
 }: HeaderProps) {
@@ -223,43 +229,88 @@ export function Header({
           {/* Notifications dropdown */}
           {isNotificationsOpen && (
             <div
-              className="absolute right-0 top-full mt-1 w-80 bg-white rounded-lg shadow-floating border border-zinc-200 z-50"
+              className="absolute right-0 top-full mt-1 w-96 bg-white rounded-lg shadow-lg border border-zinc-200 z-50"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-3 border-b border-zinc-100">
-                <h3 className="font-medium text-sm text-zinc-900">通知</h3>
+              <div className="px-4 py-2.5 border-b border-zinc-200">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-zinc-900">通知</h3>
+                  {unreadCount > 0 && onMarkAllAsRead && (
+                    <button
+                      className="text-xs text-zinc-600 hover:text-zinc-900 font-medium transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onMarkAllAsRead();
+                      }}
+                    >
+                      全部已读
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="max-h-80 overflow-y-auto">
-                {notifications.length === 0 ? (
-                  <div className="p-6 text-center text-zinc-400 text-sm">
-                    暂无通知
+              <div className="max-h-[420px] overflow-y-auto">
+                {notifications.filter(n => !n.isRead).slice(0, 5).length === 0 ? (
+                  <div className="py-12 text-center">
+                    <Bell className="w-8 h-8 text-zinc-300 mx-auto mb-2" />
+                    <p className="text-sm text-zinc-500">暂无新通知</p>
                   </div>
                 ) : (
-                  notifications.slice(0, 5).map((notif) => (
-                    <div
-                      key={notif.id}
-                      className={cn(
-                        'p-3 border-b border-zinc-50 hover:bg-zinc-50 cursor-pointer transition-colors',
-                        !notif.isRead && 'bg-zinc-50'
-                      )}
-                    >
-                      <div className="flex items-start gap-2">
-                        {!notif.isRead && (
-                          <span className="w-1.5 h-1.5 bg-zinc-900 rounded-full mt-2 shrink-0" />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[13px] font-medium text-zinc-900">{notif.title}</p>
-                          <p className="text-xs text-zinc-500 truncate mt-0.5">{notif.content}</p>
+                  <div className="py-1">
+                    {notifications.filter(n => !n.isRead).slice(0, 5).map((notif) => (
+                      <button
+                        key={notif.id}
+                        className="w-full px-4 py-2.5 hover:bg-zinc-50 transition-colors text-left border-b border-zinc-100 last:border-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onOpenNotificationCenter) {
+                            onOpenNotificationCenter();
+                            setIsNotificationsOpen(false);
+                          }
+                        }}
+                      >
+                        <div className="flex items-start gap-2.5">
+                          <div className="w-1.5 h-1.5 bg-zinc-900 rounded-full mt-1.5 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2 mb-0.5">
+                              <span className="text-xs font-semibold text-zinc-900 line-clamp-1">
+                                {notif.title}
+                              </span>
+                              <span className="text-[11px] text-zinc-400 whitespace-nowrap">
+                                {formatDistanceToNow(new Date(notif.createdAt), {
+                                  addSuffix: true,
+                                  locale: zhCN,
+                                })}
+                              </span>
+                            </div>
+                            {notif.senderName && (
+                              <p className="text-[11px] text-zinc-500 mb-1">
+                                {notif.senderName}
+                              </p>
+                            )}
+                            <p className="text-xs text-zinc-600 line-clamp-2 leading-relaxed">
+                              {notif.content}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  ))
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
-              <div className="p-2 border-t border-zinc-100">
-                <Button variant="ghost" size="sm" className="w-full text-zinc-600 hover:text-zinc-900 text-xs">
-                  查看全部
-                </Button>
+              {/* 查看全部通知按钮 */}
+              <div className="px-4 py-2.5 border-t border-zinc-200 bg-zinc-50">
+                <button
+                  className="w-full text-center py-1.5 text-xs text-zinc-600 hover:text-zinc-900 font-medium transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onOpenNotificationCenter) {
+                      onOpenNotificationCenter();
+                      setIsNotificationsOpen(false);
+                    }
+                  }}
+                >
+                  查看全部通知 →
+                </button>
               </div>
             </div>
           )}
@@ -286,23 +337,18 @@ export function Header({
           {/* User dropdown */}
           {isUserMenuOpen && (
             <div
-              className="absolute right-0 top-full mt-1 w-56 bg-white rounded-lg shadow-floating border border-zinc-200 z-50"
+              className="absolute right-0 top-full mt-1 w-56 bg-white rounded-lg shadow-lg border border-zinc-200 z-50"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-3 border-b border-zinc-100">
                 <p className="font-medium text-sm text-zinc-900">{user.name}</p>
                 <p className="text-xs text-zinc-500 mt-0.5">{user.email}</p>
-                <span className="inline-block mt-1.5 px-2 py-0.5 bg-zinc-100 text-zinc-600 text-[10px] font-medium rounded">
+                <span className="inline-block mt-2 px-2 py-0.5 bg-zinc-100 text-zinc-600 text-[10px] font-medium rounded">
                   {user.role === 'manager' ? '经理' : user.role === 'supervisor' ? '主管' : '员工'}
                 </span>
               </div>
-              <div className="p-1">
-                <button className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-zinc-700 hover:bg-zinc-100 rounded-md transition-colors">
-                  <UserIcon className="w-4 h-4 text-zinc-400" />
-                  个人资料
-                </button>
-                <div className="my-1 border-t border-zinc-100" />
-                <button className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-red-600 hover:bg-red-50 rounded-md transition-colors">
+              <div className="p-1.5">
+                <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors">
                   <LogOut className="w-4 h-4" />
                   退出登录
                 </button>

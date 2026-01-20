@@ -99,7 +99,7 @@ export function HistoryModal({
                       {new Date(ver.updatedAt).toLocaleDateString()} {new Date(ver.updatedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                     </div>
                     <div className="text-xs text-zinc-600 truncate">
-                      {ver.updatedBy === 'user_003' ? '王思聪' : '李晓燕'} • {ver.summary}
+                      {ver.updatedBy === 'user_003' ? '王文渊' : '李晓燕'} • {ver.summary}
                     </div>
                   </div>
                 );
@@ -114,7 +114,7 @@ export function HistoryModal({
                 <div>
                   <h1 className="text-xl font-bold text-zinc-900">v{activeVersion.version}.0 版本预览</h1>
                   <p className="text-sm text-zinc-500 mt-1">
-                    修改人: {activeVersion.updatedBy === 'user_003' ? '王思聪' : '李晓燕'}
+                    修改人: {activeVersion.updatedBy === 'user_003' ? '王文渊' : '李晓燕'}
                   </p>
                 </div>
                 {activeVersion.version !== versions[0].version && (

@@ -109,8 +109,8 @@ export type EditorViewMode = 'edit' | 'preview' | 'split';
 // 编辑器标签页
 export interface EditorTab {
   id: string;
-  type?: 'document' | 'task_board' | 'manager_task_board' | 'review_center' | 'project_management' | 'user_management';
-  documentId?: string; // Optional for task_board, manager_task_board, review_center, project_management, and user_management
+  type?: 'document' | 'task_board' | 'manager_task_board' | 'review_center' | 'project_management' | 'user_management' | 'notification_center';
+  documentId?: string; // Optional for task_board, manager_task_board, review_center, project_management, user_management, and notification_center
   title: string;
   isModified: boolean;
 }
@@ -142,24 +142,53 @@ export interface ChatSession {
 
 // 通知类型
 export type NotificationType =
-  | 'approval_request'
-  | 'approval_result'
-  | 'mention'
-  | 'comment'
-  | 'conflict'
-  | 'system';
+  | 'approval_request'      // 审批请求
+  | 'approval_result'       // 审批结果
+  | 'task_assigned'         // 任务分配
+  | 'task_update'           // 任务状态更新
+  | 'task_blocked'          // 任务被阻塞
+  | 'task_deadline'         // 任务即将逾期
+  | 'project_deadline'      // 项目截止
+  | 'document_moved'        // 文档被移动
+  | 'mention'               // @提及
+  | 'comment'               // 评论
+  | 'conflict'              // 冲突
+  | 'system';               // 系统通知
+
+// 通知优先级
+export type NotificationPriority = 'urgent' | 'high' | 'normal' | 'low';
+
+// 通知目标类型
+export type NotificationTargetType = 'document' | 'task_board' | 'review_center' | 'project' | 'notification_center';
 
 // 通知
 export interface Notification {
   id: string;
   type: NotificationType;
+  priority: NotificationPriority;
   title: string;
   content: string;
   isRead: boolean;
   createdAt: string;
+
+  // 发送人信息
+  senderId?: string;
+  senderName?: string;
+  senderAvatar?: string;
+
+  // 关联数据
   projectId?: string;
+  projectName?: string;
   documentId?: string;
-  actionUrl?: string;
+  documentTitle?: string;
+  taskId?: string;
+  reviewId?: string;
+
+  // 跳转目标
+  targetType?: NotificationTargetType;
+  targetId?: string;
+
+  // 操作按钮文字
   actionLabel?: string;
 }
 
